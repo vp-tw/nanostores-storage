@@ -1,0 +1,19 @@
+{
+  "name": "@vdustr/template-aio-ts-lib",
+  "version": "1.0.0",
+  "description": "A template for developing libraries",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:"
+  }
+}

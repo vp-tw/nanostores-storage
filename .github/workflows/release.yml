@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      # Remove this if publishing to npm instead of GitHub Packages
+      - name: Creating .npmrc
+        run: |
+          cat << EOF > "$HOME/.npmrc"
+            //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+          EOF
+
+      - name: Release
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: pnpm release
+          title: "build: bump version"
+          commit: "build: bump version"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  keep-one-ts-lib:
+    name: Keep only one version of template-aio-ts-lib
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          package-type: npm
+          package-name: template-aio-ts-lib
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 1
+        # Allow to continue even if the package is not found.
+        #
+        # ```
+        # Error: delete version API failed. Package not found.
+        # ```
+        continue-on-error: true
