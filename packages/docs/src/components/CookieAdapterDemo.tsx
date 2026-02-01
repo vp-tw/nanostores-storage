@@ -1,6 +1,6 @@
-import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+import type { StorageAdapter, StorageStore } from "@vp-tw/nanostores-storage";
 import { useStore } from "@nanostores/react";
-import { createStorageStore, createStorageValuesStore, noop } from "@vp-tw/nanostores-storage";
+import { createStorageValuesStore, noop } from "@vp-tw/nanostores-storage";
 import Cookies from "js-cookie";
 import { Cookie, Plus, RefreshCw, Trash2 } from "lucide-react";
 import * as React from "react";
@@ -23,8 +23,7 @@ import {
   StorageTable,
   ValueCell,
 } from "./demo";
-
-type StoreInstance = ReturnType<typeof createStorageStore>;
+import { useKeyBasedStores } from "./demo/hooks";
 
 const GITHUB_SOURCE_URL =
   "https://github.com/vp-tw/nanostores-storage/blob/main/packages/docs/src/components/CookieAdapterDemo.tsx";
@@ -100,7 +99,7 @@ function createCookieAdapter(
 
 const StoreRow: React.FC<{
   storageKey: string;
-  store: StoreInstance;
+  store: StorageStore;
   onDelete: () => void;
 }> = ({ storageKey, store, onDelete }) => {
   const value = useStore(store.$value);
@@ -129,54 +128,10 @@ const CookieAdapterDemoView: React.FC<{
   monitor: ReturnType<typeof createStorageValuesStore>;
 }> = ({ adapter, monitor }) => {
   const [newKey, setNewKey] = React.useState("");
-
-  const [stores, setStores] = React.useState<Record<string, StoreInstance>>(() => {
-    const initialStores: Record<string, StoreInstance> = {};
-    for (const key of Object.keys(monitor.$value.get())) {
-      initialStores[key] = createStorageStore(adapter, key);
-    }
-    return initialStores;
-  });
-
-  const storesRef = React.useRef(stores);
-  React.useEffect(() => {
-    storesRef.current = stores;
-  }, [stores]);
+  const stores = useKeyBasedStores(monitor, adapter);
 
   const values = useStore(monitor.$value);
   const keys = Object.keys(values);
-
-  React.useEffect(() => {
-    const unsubscribe = monitor.$value.subscribe((current, oldValue) => {
-      const currentKeys = new Set(Object.keys(current));
-      const oldKeys = oldValue ? new Set(Object.keys(oldValue)) : new Set<string>();
-
-      for (const key of currentKeys) {
-        if (!oldKeys.has(key)) {
-          if (!storesRef.current[key]) {
-            const store = createStorageStore(adapter, key);
-            setStores((prev) => ({ ...prev, [key]: store }));
-          }
-        }
-      }
-
-      for (const key of oldKeys) {
-        if (!currentKeys.has(key)) {
-          const store = storesRef.current[key];
-          if (store) {
-            store.listener.off();
-            setStores((prev) => {
-              const next = { ...prev };
-              delete next[key];
-              return next;
-            });
-          }
-        }
-      }
-    });
-
-    return () => unsubscribe();
-  }, [monitor, adapter]);
 
   const addKey = React.useCallback(() => {
     const trimmedKey = newKey.trim();
