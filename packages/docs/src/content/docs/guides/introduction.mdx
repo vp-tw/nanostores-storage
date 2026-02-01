@@ -1,0 +1,82 @@
+---
+title: Introduction
+description: A powerful integration tool for nanostores with Web Storage APIs
+---
+
+**nanostores-storage** is a lightweight library that bridges [nanostores](https://github.com/nanostores/nanostores) with browser storage APIs. It provides reactive stores that automatically sync with localStorage, sessionStorage, or custom storage backends.
+
+## Features
+
+- **Reactive Storage** — Changes to storage automatically update your stores
+- **Cross-Tab Sync** — Listen for changes from other browser tabs
+- **Fallback Chains** — Use multiple storage backends with automatic fallback
+- **Custom Adapters** — Implement your own storage backends (cookies, IndexedDB, etc.)
+- **TypeScript First** — Full type safety out of the box
+- **Tree Shakeable** — Only bundle what you use
+
+## Why nanostores-storage?
+
+### vs @nanostores/persistent
+
+The nanostores ecosystem has [@nanostores/persistent](https://github.com/nanostores/persistent) for simple localStorage persistence. However, it intentionally stays minimal to keep bundle size small.
+
+**nanostores-storage** is designed for applications that need:
+
+- **Multiple storage backends** — localStorage, sessionStorage, cookies, memory, or custom adapters
+- **Fallback chains** — Graceful degradation across storage types
+- **Full storage control** — Monitor and manage entire storage contents
+- **Testing support** — Built-in memory adapter for unit tests and SSR
+
+If you only need basic localStorage with a single key, `@nanostores/persistent` may be sufficient. For more complex storage requirements, use nanostores-storage.
+
+### Reactive Storage
+
+Browser storage APIs are not reactive by default. nanostores-storage wraps them in reactive nanostores atoms, so your components automatically re-render when storage changes — even from other tabs.
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+// Create a reactive store bound to localStorage
+const userStore = createStorageStore(localStorageAdapter, "user-name", {
+  defaultValue: "Guest",
+  listen: true, // React to changes from other tabs
+});
+
+// Read value reactively
+userStore.$value.subscribe((value) => {
+  console.log("User name:", value);
+});
+
+// Update value (automatically syncs to localStorage)
+userStore.set("Alice");
+```
+
+## Quick Example
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+import { useStore } from "@nanostores/react";
+
+// Define your store
+const themeStore = createStorageStore(localStorageAdapter, "theme", {
+  defaultValue: "dark",
+  listen: true,
+});
+
+// Use in React
+function ThemeToggle() {
+  const theme = useStore(themeStore.$value);
+
+  return (
+    <button onClick={() => themeStore.set(theme === "dark" ? "light" : "dark")}>
+      Current: {theme}
+    </button>
+  );
+}
+```
+
+## Next Steps
+
+- [Installation](/nanostores-storage/guides/installation) — Add nanostores-storage to your project
+- [Quick Start](/nanostores-storage/guides/quick-start) — Build your first reactive storage store
+- [Storage Adapters](/nanostores-storage/concepts/adapters) — Learn about built-in and custom adapters

@@ -1,0 +1,181 @@
+---
+title: Cross-Tab Sync
+description: Listening for storage changes from other browser tabs
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+nanostores-storage can listen for storage changes from other browser tabs or windows. This enables real-time synchronization across your application.
+
+## Enabling Cross-Tab Sync
+
+### Option 1: Enable at Creation
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const store = createStorageStore(localStorageAdapter, "shared-key", {
+  listen: true, // Start listening immediately
+});
+```
+
+### Option 2: Control Manually
+
+```typescript
+const store = createStorageStore(localStorageAdapter, "shared-key");
+
+// Start listening
+store.listener.on();
+
+// Check status
+console.log(store.listener.$on.get()); // true
+
+// Stop listening
+store.listener.off();
+```
+
+## How It Works
+
+When `listen` is enabled:
+
+1. The adapter subscribes to `StorageEvent` on the `window` object
+2. When storage changes externally, the event fires
+3. The store re-reads from storage and updates its value
+4. Your subscribers are notified of the change
+
+```typescript
+// Tab 1
+const store = createStorageStore(localStorageAdapter, "counter", {
+  listen: true,
+});
+
+store.$value.subscribe((value) => {
+  console.log("Counter:", value); // Logs when Tab 2 changes it
+});
+
+// Tab 2
+localStorage.setItem("counter", "42");
+// Tab 1 automatically updates!
+```
+
+<Aside type="caution" title="Browser Limitation: Same-Tab Changes">
+The `StorageEvent` is **only fired when storage is modified from a different tab or window**. Changes made within the same tab do NOT trigger the event.
+
+This means:
+
+- `createStorageStore` with `listen: true` will NOT react to `localStorage.setItem()` calls in the same tab
+- `createStorageValuesStore` with `listen: true` will NOT react to direct storage modifications in the same tab
+- Two different store instances in the same tab will NOT sync with each other via the listener
+
+**This is a browser-level limitation, not a library bug.**
+
+**Workaround for same-tab changes from other libraries:**
+
+Use `sync()` with `setInterval` to poll for changes:
+
+```typescript
+// Poll for changes from other code in the same tab
+const interval = setInterval(() => store.sync(), 1000);
+
+// Cleanup when done
+clearInterval(interval);
+```
+
+**For sharing state between components in the same tab**, use a single source of truth with `computed` for derived values:
+
+```typescript
+import { computed } from "nanostores";
+
+// Single source of truth
+const userStore = createStorageStore(localStorageAdapter, "user");
+
+// Derived values using computed (no sync needed)
+const isLoggedIn = computed(userStore.$value, (user) => user !== null);
+```
+
+</Aside>
+
+## Listener State
+
+The listener state is a reactive atom:
+
+```typescript
+import { useStore } from "@nanostores/react";
+
+function SyncIndicator() {
+  const isListening = useStore(store.listener.$on);
+
+  return (
+    <span>
+      {isListening ? "Syncing enabled" : "Syncing disabled"}
+    </span>
+  );
+}
+```
+
+## localStorage vs sessionStorage
+
+| Feature          | localStorage  | sessionStorage   |
+| ---------------- | ------------- | ---------------- |
+| Cross-tab events | ✅ Yes        | ❌ No\*          |
+| Persistence      | Until cleared | Until tab closes |
+
+\*sessionStorage is isolated per tab, so there are no cross-tab events to listen for.
+
+<Aside type="note">
+  Enabling `listen: true` on sessionStorage stores is technically valid but won't receive external
+  events since sessionStorage is tab-isolated.
+</Aside>
+
+## Performance Considerations
+
+- Each listener adds a `storage` event handler to `window`
+- Event handlers are reference-counted and cleaned up automatically
+- Multiple stores can share the same underlying event listener
+
+```typescript
+// These two stores share the same event listener internally
+const store1 = createStorageStore(localStorageAdapter, "key1", { listen: true });
+const store2 = createStorageStore(localStorageAdapter, "key2", { listen: true });
+```
+
+## Example: Real-Time Theme Sync
+
+```typescript
+// theme-store.ts
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+export const themeStore = createStorageStore(localStorageAdapter, "theme", {
+  defaultValue: "system",
+  listen: true,
+});
+
+// Apply theme on change
+themeStore.$value.subscribe((theme) => {
+  document.documentElement.dataset.theme = theme ?? "system";
+});
+```
+
+Now when you change the theme in one tab, all other tabs update instantly.
+
+## Cleanup
+
+When using manual control, remember to stop listening when appropriate:
+
+```typescript
+// In a component
+useEffect(() => {
+  store.listener.on();
+
+  return () => {
+    store.listener.off();
+  };
+}, []);
+```
+
+With `listen: true` at creation, the listener runs for the lifetime of the store.
+
+## Next Steps
+
+- [createStorageStore API](/nanostores-storage/api/create-storage-store) — Full API reference
+- [Custom Adapters](/nanostores-storage/recipes/custom-adapters) — Implement custom storage backends

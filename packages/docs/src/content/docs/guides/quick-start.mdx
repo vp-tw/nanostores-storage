@@ -1,0 +1,185 @@
+---
+title: Quick Start
+description: Create your first reactive storage store in minutes
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+This guide will walk you through the basics of nanostores-storage.
+
+## 1. Create a Storage Store
+
+A storage store binds a single key to a reactive nanostore atom.
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+// Create a store for user preferences
+const usernameStore = createStorageStore(localStorageAdapter, "username", {
+  defaultValue: "Guest",
+});
+```
+
+## 2. Read and Write Values
+
+```typescript
+// Read current value
+const username = usernameStore.get();
+console.log(username); // "Guest" (or stored value)
+
+// Update value
+usernameStore.set("Alice");
+
+// Remove value (resets to null)
+usernameStore.remove();
+```
+
+## 3. Subscribe to Changes
+
+```typescript
+// React to all changes
+usernameStore.$value.subscribe((value) => {
+  console.log("Username changed:", value);
+});
+
+// Or use listen() to skip the initial call
+usernameStore.$value.listen((value) => {
+  console.log("Username updated to:", value);
+});
+```
+
+## 4. Use with React
+
+<Tabs>
+  <TabItem label="React">
+    ```tsx
+    import { useStore } from "@nanostores/react";
+    import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+    const usernameStore = createStorageStore(localStorageAdapter, "username", {
+      defaultValue: "Guest",
+    });
+
+    function UserGreeting() {
+      const username = useStore(usernameStore.$value);
+
+      return (
+        <div>
+          <p>Hello, {username}!</p>
+          <input
+            value={username ?? ""}
+            onChange={(e) => usernameStore.set(e.target.value)}
+          />
+        </div>
+      );
+    }
+    ```
+
+  </TabItem>
+  <TabItem label="Vue">
+    ```vue
+    <script setup>
+    import { useStore } from "@nanostores/vue";
+    import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+    const usernameStore = createStorageStore(localStorageAdapter, "username", {
+      defaultValue: "Guest",
+    });
+
+    const username = useStore(usernameStore.$value);
+    </script>
+
+    <template>
+      <div>
+        <p>Hello, {{ username }}!</p>
+        <input
+          :value="username ?? ''"
+          @input="usernameStore.set($event.target.value)"
+        />
+      </div>
+    </template>
+    ```
+
+  </TabItem>
+  <TabItem label="Svelte">
+    ```svelte
+    <script>
+    import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+    const usernameStore = createStorageStore(localStorageAdapter, "username", {
+      defaultValue: "Guest",
+    });
+
+    // Svelte auto-subscribes with $ prefix
+    $: username = $usernameStore.$value;
+    </script>
+
+    <div>
+      <p>Hello, {username}!</p>
+      <input
+        value={username ?? ""}
+        on:input={(e) => usernameStore.set(e.target.value)}
+      />
+    </div>
+    ```
+
+  </TabItem>
+</Tabs>
+
+## 5. Enable Cross-Tab Sync
+
+Listen for changes from other browser tabs:
+
+```typescript
+const usernameStore = createStorageStore(localStorageAdapter, "username", {
+  defaultValue: "Guest",
+  listen: true, // Enable cross-tab sync
+});
+
+// Or control manually:
+usernameStore.listener.on();
+usernameStore.listener.off();
+
+// Check if listening:
+console.log(usernameStore.listener.$on.get()); // true/false
+```
+
+## 6. Use sessionStorage
+
+Simply swap the adapter:
+
+```typescript
+import { createStorageStore, sessionStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const sessionStore = createStorageStore(sessionStorageAdapter, "session-data");
+```
+
+## Complete Example
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+// Theme preference with cross-tab sync
+const themeStore = createStorageStore(localStorageAdapter, "theme", {
+  defaultValue: "system",
+  listen: true,
+});
+
+// React to theme changes
+themeStore.$value.subscribe((theme) => {
+  document.documentElement.setAttribute("data-theme", theme ?? "system");
+});
+
+// Toggle theme
+function toggleTheme() {
+  const current = themeStore.get();
+  const next = current === "dark" ? "light" : "dark";
+  themeStore.set(next);
+}
+```
+
+## Next Steps
+
+- [Storage Adapters](/nanostores-storage/concepts/adapters) — Learn about localStorage, sessionStorage, and custom adapters
+- [Fallback Chains](/nanostores-storage/concepts/fallback-chains) — Use multiple storage backends
+- [API Reference](/nanostores-storage/api/create-storage-store) — Full API documentation

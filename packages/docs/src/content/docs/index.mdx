@@ -1,0 +1,43 @@
+---
+title: nanostores-storage
+description: A powerful integration tool for nanostores with Web Storage APIs
+template: splash
+hero:
+  tagline: Reactive storage for nanostores. Sync localStorage, sessionStorage, and custom backends with automatic cross-tab updates.
+  actions:
+    - text: Get Started
+      link: /nanostores-storage/guides/introduction/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/vp-tw/nanostores-storage
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Why nanostores-storage?
+
+While [@nanostores/persistent](https://github.com/nanostores/persistent) provides simple localStorage persistence, **nanostores-storage** is designed for applications that need more:
+
+- **Multiple storage backends** — localStorage, sessionStorage, cookies, memory
+- **Fallback chains** — Graceful degradation across storage types
+- **Full storage control** — Monitor and manage entire storage contents
+- **Built-in testing support** — Memory adapter for unit tests and SSR
+
+## Features
+
+<CardGrid stagger>
+  <Card title="Reactive Storage" icon="rocket">
+    Changes to storage automatically update your stores. No manual syncing required.
+  </Card>
+  <Card title="Cross-Tab Sync" icon="refresh">
+    Listen for changes from other browser tabs in real-time.
+  </Card>
+  <Card title="Fallback Chains" icon="list-format">
+    Use multiple storage backends with automatic fallback for graceful degradation.
+  </Card>
+  <Card title="Custom Adapters" icon="puzzle">
+    Implement your own storage backends - cookies, encrypted storage, or anything else.
+  </Card>
+</CardGrid>

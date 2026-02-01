@@ -1,0 +1,30 @@
+{
+  "name": "@repo/docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Documentation and demo site for @vp-tw/nanostores-storage",
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/react": "catalog:",
+    "@astrojs/starlight": "catalog:",
+    "@nanostores/react": "catalog:",
+    "@vp-tw/nanostores-storage": "workspace:*",
+    "astro": "catalog:",
+    "js-cookie": "catalog:",
+    "lucide-react": "catalog:",
+    "nanostores": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "sharp": "catalog:"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
+  }
+}

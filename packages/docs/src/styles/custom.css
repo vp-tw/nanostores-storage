@@ -1,0 +1,720 @@
+/* nanostores-storage docs - Theme-aware demo styling */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --sl-font: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --sl-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Accent colors - green for storage/sync theme */
+  --sl-color-accent-low: hsl(142, 40%, 18%);
+  --sl-color-accent: hsl(142, 71%, 45%);
+  --sl-color-accent-high: hsl(142, 69%, 58%);
+}
+
+/* ============================================
+   Demo Component System
+   Theme-aware styling using Starlight variables
+   ============================================ */
+
+/* Base container - cards that hold demo content */
+.demo-container {
+  --demo-bg: var(--sl-color-gray-6);
+  --demo-border: var(--sl-color-gray-5);
+  --demo-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+  box-shadow: var(--demo-shadow);
+  transition: border-color 0.2s ease;
+  color: var(--sl-color-gray-1);
+}
+
+.demo-container:hover {
+  border-color: var(--sl-color-gray-4);
+}
+
+/* Inner sections within containers */
+.demo-section {
+  --section-bg: color-mix(in srgb, var(--sl-color-gray-6) 50%, transparent);
+
+  background: var(--section-bg);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 0.75rem;
+}
+
+/* ============================================
+   Form Elements
+   ============================================ */
+
+.demo-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background: var(--sl-color-bg);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 6px;
+  color: var(--sl-color-text);
+  font-family: var(--sl-font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.demo-input:hover {
+  border-color: var(--sl-color-gray-4);
+}
+
+.demo-input:focus {
+  outline: none;
+  border-color: var(--sl-color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sl-color-accent) 20%, transparent);
+}
+
+.demo-input::placeholder {
+  color: var(--sl-color-gray-3);
+}
+
+.demo-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Select styling */
+select.demo-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+/* Labels */
+.demo-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--sl-color-gray-2);
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.demo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--sl-color-accent);
+  color: var(--sl-color-black);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--sl-font);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.demo-button:hover {
+  background: var(--sl-color-accent-high);
+  transform: translateY(-1px);
+}
+
+.demo-button:active {
+  transform: translateY(0);
+}
+
+.demo-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.demo-button-danger {
+  background: hsl(0, 72%, 51%);
+  color: white;
+}
+
+.demo-button-danger:hover {
+  background: hsl(0, 72%, 45%);
+}
+
+.demo-button-danger:disabled {
+  background: hsl(0, 20%, 40%);
+}
+
+/* Secondary/ghost button style */
+.demo-button-secondary {
+  background: transparent;
+  color: var(--sl-color-text);
+  border: 1px solid var(--sl-color-gray-5);
+}
+
+.demo-button-secondary:hover {
+  background: var(--sl-color-gray-6);
+  border-color: var(--sl-color-gray-4);
+}
+
+/* Icon-only buttons */
+.demo-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  background: transparent;
+  color: var(--sl-color-gray-3);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.demo-icon-button:hover {
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-text);
+}
+
+.demo-icon-button.active {
+  color: var(--sl-color-accent);
+}
+
+.demo-icon-button.active:hover {
+  background: color-mix(in srgb, var(--sl-color-accent) 15%, transparent);
+}
+
+.demo-icon-button.danger:hover {
+  background: color-mix(in srgb, hsl(0, 72%, 51%) 15%, transparent);
+  color: hsl(0, 72%, 60%);
+}
+
+/* ============================================
+   Typography within demos
+   ============================================ */
+
+.demo-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sl-color-text);
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Remove margin when title is inside a flex row */
+.demo-row .demo-title,
+.demo-row-between .demo-title {
+  margin: 0;
+}
+
+.demo-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+  margin: 0 0 0.5rem 0;
+}
+
+.demo-text {
+  font-size: 0.875rem;
+  color: var(--sl-color-gray-3);
+  line-height: 1.6;
+}
+
+.demo-text-sm {
+  font-size: 0.75rem;
+  color: var(--sl-color-gray-3);
+}
+
+/* Code/value styling */
+.demo-value {
+  font-family: var(--sl-font-mono);
+  font-size: 0.875em;
+  color: var(--sl-color-accent-high);
+}
+
+.demo-null {
+  color: var(--sl-color-gray-4);
+  font-style: italic;
+}
+
+.demo-code {
+  font-family: var(--sl-font-mono);
+  font-size: 0.8125rem;
+  color: var(--sl-color-accent);
+  background: color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+/* ============================================
+   Badges
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 100px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-green {
+  background: color-mix(in srgb, var(--sl-color-accent) 20%, transparent);
+  color: var(--sl-color-accent-high);
+}
+
+.badge-blue {
+  background: color-mix(in srgb, hsl(217, 91%, 60%) 20%, transparent);
+  color: hsl(217, 91%, 70%);
+}
+
+.badge-gray {
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-gray-3);
+}
+
+.badge-orange {
+  background: color-mix(in srgb, hsl(25, 95%, 53%) 20%, transparent);
+  color: hsl(25, 95%, 63%);
+}
+
+/* Pulsing dot for "live" indicators */
+.badge-green::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--sl-color-accent);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+}
+
+/* ============================================
+   Storage Table
+   ============================================ */
+
+.storage-table {
+  display: table !important;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  table-layout: fixed;
+}
+
+.storage-table thead {
+  display: table-header-group;
+}
+
+.storage-table tbody {
+  display: table-row-group;
+}
+
+.storage-table tr {
+  display: table-row;
+}
+
+.storage-table th,
+.storage-table td {
+  display: table-cell;
+}
+
+.storage-table th,
+.storage-table td {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--sl-color-gray-5);
+}
+
+.storage-table th {
+  color: var(--sl-color-gray-3);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: color-mix(in srgb, var(--sl-color-gray-6) 50%, transparent);
+}
+
+.storage-table tbody tr {
+  transition: background 0.1s ease;
+}
+
+.storage-table tbody tr:hover {
+  background: color-mix(in srgb, var(--sl-color-gray-6) 30%, transparent);
+}
+
+.storage-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.storage-table td {
+  font-family: var(--sl-font-mono);
+}
+
+.storage-table .key-cell {
+  color: hsl(217, 91%, 65%);
+  font-weight: 500;
+  width: 35%;
+  word-break: break-all;
+}
+
+.storage-table .value-cell {
+  color: var(--sl-color-accent-high);
+  word-break: break-all;
+  cursor: pointer;
+  transition: color 0.1s ease;
+}
+
+.storage-table .value-cell:hover {
+  color: var(--sl-color-accent);
+}
+
+.storage-table .action-cell {
+  text-align: right;
+  width: auto;
+  white-space: nowrap;
+}
+
+/* ============================================
+   Tab Navigation
+   ============================================ */
+
+.demo-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--sl-color-gray-6);
+  border-radius: 8px;
+  width: fit-content;
+
+  > * {
+    margin-top: 0 !important;
+  }
+}
+
+.demo-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--sl-color-gray-3);
+  border: none;
+  border-radius: 6px;
+  font-family: var(--sl-font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.demo-tab:hover {
+  color: var(--sl-color-text);
+  background: color-mix(in srgb, var(--sl-color-gray-5) 50%, transparent);
+}
+
+.demo-tab.active {
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+.demo-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.5rem;
+  padding: 0 0.375rem;
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+/* ============================================
+   Layout Utilities
+   ============================================ */
+
+.demo-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.demo-grid-2 {
+  grid-template-columns: 1fr;
+}
+
+.demo-grid-3 {
+  grid-template-columns: 1fr;
+}
+
+.demo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  > * {
+    margin-top: 0 !important;
+  }
+}
+
+.demo-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  > * {
+    margin-top: 0 !important;
+  }
+}
+
+.demo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ============================================
+   Info/Tip Box
+   ============================================ */
+
+.demo-info {
+  background: color-mix(in srgb, var(--sl-color-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sl-color-accent) 25%, transparent);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.demo-info-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sl-color-accent-high);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.demo-info ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demo-info li {
+  position: relative;
+  padding-left: 1rem;
+  font-size: 0.8125rem;
+  color: var(--sl-color-gray-2);
+  line-height: 1.6;
+}
+
+.demo-info li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--sl-color-accent);
+}
+
+.demo-info li + li {
+  margin-top: 0.25rem;
+}
+
+.demo-info code {
+  font-family: var(--sl-font-mono);
+  font-size: 0.8125em;
+  color: var(--sl-color-accent);
+  background: color-mix(in srgb, var(--sl-color-accent) 15%, transparent);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.demo-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--sl-color-gray-3);
+}
+
+.demo-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  color: var(--sl-color-gray-4);
+  opacity: 0.5;
+}
+
+.demo-empty-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+  margin-bottom: 0.25rem;
+}
+
+.demo-empty-text {
+  font-size: 0.8125rem;
+  color: var(--sl-color-gray-4);
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (min-width: 640px) {
+  .demo-container {
+    padding: 1.5rem;
+  }
+
+  .demo-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .demo-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .demo-container {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .demo-row-between {
+    flex-wrap: wrap;
+  }
+
+  .demo-tabs {
+    width: 100%;
+  }
+
+  .demo-tab {
+    flex: 1;
+    text-align: center;
+    padding: 0.625rem 0.5rem;
+  }
+
+  .storage-table {
+    font-size: 0.75rem;
+  }
+
+  .storage-table th,
+  .storage-table td {
+    padding: 0.5rem;
+  }
+}
+
+/* ============================================
+   Light Theme Adjustments
+   ============================================ */
+
+[data-theme="light"] {
+  .demo-container {
+    --demo-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-1);
+  }
+
+  .demo-section {
+    background: var(--sl-color-gray-6);
+  }
+
+  .demo-button {
+    color: white;
+  }
+
+  .demo-button-secondary {
+    color: var(--sl-color-gray-1);
+    border-color: var(--sl-color-gray-4);
+  }
+
+  .demo-tab.active {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  }
+
+  .storage-table .key-cell {
+    color: hsl(217, 91%, 50%);
+  }
+
+  .storage-table .value-cell {
+    color: hsl(142, 71%, 35%);
+  }
+
+  .storage-table .value-cell:hover {
+    color: hsl(142, 71%, 30%);
+  }
+}
+
+/* ============================================
+   Code Block Fixes
+   ============================================ */
+
+.expressive-code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.expressive-code pre {
+  max-width: 100%;
+}
+
+/* ============================================
+   Icon Size Utilities
+   ============================================ */
+
+.w-3\.5 {
+  width: 0.875rem;
+}
+.w-4 {
+  width: 1rem;
+}
+.w-5 {
+  width: 1.25rem;
+}
+.h-3\.5 {
+  height: 0.875rem;
+}
+.h-4 {
+  height: 1rem;
+}
+.h-5 {
+  height: 1.25rem;
+}

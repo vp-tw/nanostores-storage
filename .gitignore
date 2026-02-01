@@ -115,6 +115,9 @@ dist
 # Docusaurus cache and generated files
 .docusaurus
 
+# Astro cache and generated files
+.astro
+
 # Serverless directories
 .serverless/
 

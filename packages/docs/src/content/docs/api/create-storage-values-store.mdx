@@ -1,0 +1,289 @@
+---
+title: createStorageValuesStore
+description: API reference for createStorageValuesStore function
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Creates a reactive nanostore that mirrors the entire contents of a storage backend.
+
+## Signature
+
+```typescript
+function createStorageValuesStore(
+  adapter: StorageAdapter,
+  options?: StorageValuesStoreOptions,
+): StorageValuesStore;
+```
+
+## Parameters
+
+### adapter
+
+The storage adapter to use.
+
+| Type             | Description                           |
+| ---------------- | ------------------------------------- |
+| `StorageAdapter` | Single adapter (arrays not supported) |
+
+<Aside type="note">
+  Unlike `createStorageStore`, fallback chains are NOT supported for `createStorageValuesStore`
+  since it mirrors the entire storage contents.
+</Aside>
+
+### options
+
+Optional configuration object.
+
+```typescript
+interface StorageValuesStoreOptions {
+  listen?: boolean;
+}
+```
+
+| Option   | Type      | Default | Description           |
+| -------- | --------- | ------- | --------------------- |
+| `listen` | `boolean` | `false` | Enable cross-tab sync |
+
+## Return Value
+
+Returns a `StorageValuesStore` object:
+
+```typescript
+interface StorageValuesStore {
+  readonly $value: ReadableAtom<Record<string, string>>;
+  get: {
+    (): Record<string, string>;
+    (key: string): string | undefined;
+  };
+  set: (key: string, value: string) => void;
+  update: (values: Record<string, string>) => void;
+  update: (fn: (current: Record<string, string>) => Record<string, string>) => void;
+  remove: (key: string) => void;
+  remove: (keys: string[]) => void;
+  clear: () => void;
+  sync: () => void;
+  readonly listener: StorageListener;
+}
+```
+
+### $value
+
+A nanostores `ReadableAtom` containing all key-value pairs. Use methods to modify.
+
+```typescript
+// Subscribe to changes
+store.$value.subscribe((values) => {
+  console.log("Storage contents:", values);
+});
+```
+
+### get() / get(key)
+
+Returns all values or a single value by key.
+
+```typescript
+// Get all values
+const values = store.get();
+// { "key1": "value1", "key2": "value2" }
+
+// Get single value
+const value = store.get("key1"); // "value1" or undefined
+```
+
+### set(key, value)
+
+Sets a single key-value pair.
+
+```typescript
+store.set("username", "Alice");
+```
+
+### update(values) / update(fn)
+
+Updates multiple values or uses a function to compute new values.
+If the function returns the same reference (`current`), no update is triggered.
+
+```typescript
+// Merge new values
+store.update({ key1: "value1", key2: "value2" });
+
+// Functional update with conditional logic
+store.update((current) => {
+  const count = current["count"];
+  // Only increment if count exists and is a valid number
+  if (count !== undefined && !isNaN(parseInt(count, 10))) {
+    return { ...current, count: String(parseInt(count, 10) + 1) };
+  }
+  // Return current to skip update (no changes)
+  return current;
+});
+
+// Replace entirely
+store.update(() => ({ onlyThisKey: "value" }));
+```
+
+### remove(key) / remove(keys)
+
+Removes one or more keys from storage.
+
+```typescript
+// Remove single key
+store.remove("username");
+
+// Remove multiple keys
+store.remove(["key1", "key2", "key3"]);
+```
+
+### clear()
+
+Clears all values from storage.
+
+```typescript
+store.clear();
+// Storage is now empty
+console.log(store.get()); // {}
+```
+
+### sync()
+
+Force sync from storage to store. Useful when:
+
+- `listen: false` and you want to manually refresh
+- Polling for same-tab changes from other libraries (with `setInterval`)
+- Using adapters without event support (e.g., cookies)
+
+```typescript
+// Manual refresh when listen: false
+store.sync();
+```
+
+### listener
+
+Controls cross-tab synchronization. Same interface as `createStorageStore`.
+
+```typescript
+interface StorageListener {
+  on: () => void;
+  off: () => void;
+  toggle: () => void;
+  readonly $on: ReadableAtom<boolean>;
+}
+```
+
+<Aside type="caution" title="Same-Tab Limitation">
+  The listener reacts to storage changes from **other tabs/windows** and **DevTools edits**.
+  However, direct `localStorage.setItem()` calls from other code in the **same tab** will NOT
+  trigger updates (browser limitation). Use `sync()` with `setInterval` if you need to detect
+  same-tab changes from other libraries.
+</Aside>
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import { createStorageValuesStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const storage = createStorageValuesStore(localStorageAdapter);
+
+// Read all
+console.log(storage.get()); // { ... }
+
+// Read single value
+console.log(storage.get("theme")); // "dark" or undefined
+
+// Set single value
+storage.set("theme", "dark");
+
+// Update multiple
+storage.update({ language: "en", timezone: "UTC" });
+
+// Remove
+storage.remove("theme");
+
+// Clear all
+storage.clear();
+```
+
+### With Cross-Tab Sync
+
+```typescript
+const storage = createStorageValuesStore(localStorageAdapter, {
+  listen: true,
+});
+
+// Updates when another tab modifies localStorage
+storage.$value.subscribe((values) => {
+  console.log("Storage updated:", Object.keys(values).length, "keys");
+});
+```
+
+### Conditional Update (No-op Pattern)
+
+```typescript
+const storage = createStorageValuesStore(localStorageAdapter);
+
+// Only increment if "counter" exists and is a number
+storage.update((current) => {
+  const count = current["counter"];
+  if (count !== undefined && !isNaN(parseInt(count, 10))) {
+    return { ...current, counter: String(parseInt(count, 10) + 1) };
+  }
+  // Return current reference to skip update
+  return current;
+});
+```
+
+### React Integration
+
+```tsx
+import { useStore } from "@nanostores/react";
+import { createStorageValuesStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const storage = createStorageValuesStore(localStorageAdapter, {
+  listen: true,
+});
+
+function StorageViewer() {
+  const values = useStore(storage.$value);
+
+  return (
+    <ul>
+      {Object.entries(values).map(([key, value]) => (
+        <li key={key}>
+          <strong>{key}:</strong> {value}
+          <button onClick={() => storage.remove(key)}>Remove</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### sessionStorage Monitoring
+
+```typescript
+import { createStorageValuesStore, sessionStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const sessionStorage = createStorageValuesStore(sessionStorageAdapter);
+
+// Monitor all session data
+sessionStorage.$value.subscribe((values) => {
+  console.log("Session data:", values);
+});
+```
+
+## Use Cases
+
+- **DevTools**: Build a storage inspector/editor
+- **Debug Panel**: Monitor storage changes in development
+- **Sync UI**: Display all stored preferences
+- **Migration**: Copy/transform storage contents
+- **Backup**: Export storage to JSON
+
+## See Also
+
+- [createStorageStore](/nanostores-storage/api/create-storage-store) — Single-key storage
+- [StorageAdapter](/nanostores-storage/api/storage-adapter) — Adapter interface
+- [Cross-Tab Sync](/nanostores-storage/concepts/cross-tab-sync) — How listening works

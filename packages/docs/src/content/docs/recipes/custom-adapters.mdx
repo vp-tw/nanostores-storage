@@ -1,0 +1,242 @@
+---
+title: Custom Adapters
+description: How to create custom storage adapters
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+This guide shows how to implement the `StorageAdapter` interface for custom storage backends.
+
+<Aside type="caution" title="Synchronous API Only">
+The `StorageAdapter` interface is **synchronous by design**. All methods must return values immediately, not Promises.
+
+This means **IndexedDB and other async-only storage APIs are not directly supported**. If you need IndexedDB, consider:
+
+- Using a library like [idb-keyval](https://github.com/jakearchibald/idb-keyval) with a write-through memory cache
+- Pre-loading data at app startup, then using a memory adapter
+- Using localStorage as the primary store with IndexedDB as a backup layer
+  </Aside>
+
+## Adapter Structure
+
+Every adapter must implement these methods:
+
+```typescript
+import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+
+const myAdapter: StorageAdapter = {
+  // Single-key operations
+  get(key: string): string | null {
+    /* ... */
+  },
+  set(key: string, value: string): void {
+    /* ... */
+  },
+  remove(key: string): void {
+    /* ... */
+  },
+
+  // Bulk operations
+  getAll(): Record<string, string> {
+    /* ... */
+  },
+  setAll(values: Record<string, string>): void {
+    /* ... */
+  },
+  clear(): void {
+    /* ... */
+  },
+
+  // Change notifications
+  subscribe(callback: (key: string | null) => void): () => void {
+    /* ... */
+  },
+};
+```
+
+## Step-by-Step Guide
+
+### 1. Define Your Storage Backend
+
+First, decide how data will be stored:
+
+```typescript
+// Example: Using a Map for in-memory storage
+const storage = new Map<string, string>();
+```
+
+### 2. Implement Single-Key Operations
+
+```typescript
+get(key: string): string | null {
+  return storage.get(key) ?? null;
+},
+
+set(key: string, value: string): void {
+  storage.set(key, value);
+},
+
+remove(key: string): void {
+  storage.delete(key);
+},
+```
+
+### 3. Implement Bulk Operations
+
+```typescript
+getAll(): Record<string, string> {
+  return Object.fromEntries(storage);
+},
+
+setAll(values: Record<string, string>): void {
+  storage.clear();
+  for (const [key, value] of Object.entries(values)) {
+    storage.set(key, value);
+  }
+},
+
+clear(): void {
+  storage.clear();
+},
+```
+
+### 4. Implement Change Notifications
+
+```typescript
+const listeners = new Set<(key: string | null) => void>();
+
+subscribe(callback: (key: string | null) => void): () => void {
+  listeners.add(callback);
+  return () => {
+    listeners.delete(callback);
+  };
+},
+```
+
+### 5. Notify Listeners on Changes
+
+Update your `set`, `remove`, `setAll`, and `clear` methods:
+
+```typescript
+set(key: string, value: string): void {
+  storage.set(key, value);
+  // Notify listeners
+  for (const callback of listeners) {
+    callback(key);
+  }
+},
+
+remove(key: string): void {
+  storage.delete(key);
+  for (const callback of listeners) {
+    callback(key);
+  }
+},
+
+setAll(values: Record<string, string>): void {
+  storage.clear();
+  for (const [key, value] of Object.entries(values)) {
+    storage.set(key, value);
+  }
+  // null indicates bulk change
+  for (const callback of listeners) {
+    callback(null);
+  }
+},
+
+clear(): void {
+  storage.clear();
+  for (const callback of listeners) {
+    callback(null);
+  }
+},
+```
+
+## Complete Example
+
+```typescript
+import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+
+export function createCustomAdapter(): StorageAdapter {
+  const storage = new Map<string, string>();
+  const listeners = new Set<(key: string | null) => void>();
+
+  const notifyListeners = (key: string | null): void => {
+    for (const callback of listeners) {
+      callback(key);
+    }
+  };
+
+  return {
+    get(key) {
+      return storage.get(key) ?? null;
+    },
+
+    set(key, value) {
+      storage.set(key, value);
+      notifyListeners(key);
+    },
+
+    remove(key) {
+      storage.delete(key);
+      notifyListeners(key);
+    },
+
+    getAll() {
+      return Object.fromEntries(storage);
+    },
+
+    setAll(values) {
+      storage.clear();
+      for (const [key, value] of Object.entries(values)) {
+        storage.set(key, value);
+      }
+      notifyListeners(null);
+    },
+
+    clear() {
+      storage.clear();
+      notifyListeners(null);
+    },
+
+    subscribe(callback) {
+      listeners.add(callback);
+      return () => {
+        listeners.delete(callback);
+      };
+    },
+  };
+}
+```
+
+## Using Your Adapter
+
+```typescript
+import { createStorageStore } from "@vp-tw/nanostores-storage";
+import { createCustomAdapter } from "./my-adapter";
+
+const myAdapter = createCustomAdapter();
+
+const store = createStorageStore(myAdapter, "my-key", {
+  defaultValue: "hello",
+  listen: true,
+});
+```
+
+## Best Practices
+
+<Aside type="tip">
+  **Always notify listeners** — Even if your storage doesn't support external events, calling
+  listeners ensures consistency when using the adapter with `listen: true`.
+</Aside>
+
+1. **Return `null` for missing keys** — Never return `undefined`
+2. **Handle edge cases** — Empty strings are valid values
+3. **Be consistent** — `getAll()` should return the same data as multiple `get()` calls
+4. **Clean up listeners** — Return a proper unsubscribe function
+
+## See Also
+
+- [Memory Adapter](/nanostores-storage/api/memory-adapter) — Full in-memory example
+- [Cookie Adapter](/nanostores-storage/recipes/cookie-adapter) — Cookie storage example
+- [StorageAdapter API](/nanostores-storage/api/storage-adapter) — Interface reference

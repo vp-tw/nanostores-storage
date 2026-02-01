@@ -1,0 +1,293 @@
+---
+title: createStorageStore
+description: API reference for createStorageStore function
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Creates a reactive nanostore bound to a single storage key.
+
+## Signature
+
+```typescript
+function createStorageStore(
+  adapter: StorageAdapter | StorageAdapter[],
+  key: string,
+  options?: StorageStoreOptions,
+): StorageStore;
+```
+
+## Parameters
+
+### adapter
+
+The storage adapter(s) to use.
+
+| Type               | Description                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `StorageAdapter`   | Single adapter                                                                       |
+| `StorageAdapter[]` | Array of adapters for [fallback chain](/nanostores-storage/concepts/fallback-chains) |
+
+```typescript
+// Single adapter
+createStorageStore(localStorageAdapter, "key");
+
+// Fallback chain
+createStorageStore([sessionStorageAdapter, localStorageAdapter], "key");
+```
+
+### key
+
+The storage key to bind to.
+
+| Type     | Description      |
+| -------- | ---------------- |
+| `string` | Storage key name |
+
+### options
+
+Optional configuration object.
+
+```typescript
+interface StorageStoreOptions {
+  listen?: boolean;
+  defaultValue?: string | null;
+}
+```
+
+| Option         | Type             | Default | Description                                  |
+| -------------- | ---------------- | ------- | -------------------------------------------- |
+| `listen`       | `boolean`        | `false` | Enable cross-tab sync                        |
+| `defaultValue` | `string \| null` | `null`  | Initial fallback value when storage is empty |
+
+<Aside type="note">
+  `defaultValue` is only used at **initialization**. It is NOT written to storage, and does NOT
+  apply after the store is created. If the storage value becomes `null` later (e.g., deleted from
+  another tab), the store will reflect `null`.
+</Aside>
+
+<Aside type="tip" title="Always-On Fallback">
+If you need a fallback that always applies when value is `null`, use `computed()`:
+
+```typescript
+import { computed } from "nanostores";
+
+const themeStore = createStorageStore(localStorageAdapter, "theme");
+const $theme = computed(themeStore.$value, (v) => v ?? "system");
+```
+
+</Aside>
+
+## Return Value
+
+Returns a `StorageStore` object:
+
+```typescript
+interface StorageStore {
+  readonly $value: ReadableAtom<string | null>;
+  get: () => string | null;
+  set: (value: string) => void;
+  remove: () => void;
+  sync: () => void;
+  readonly listener: StorageListener;
+}
+```
+
+### $value
+
+A nanostores `ReadableAtom` containing the current value. Use `get()` and `set()` methods to modify.
+
+```typescript
+// Subscribe to changes
+const unsubscribe = store.$value.subscribe((value) => {
+  console.log(value);
+});
+
+// Listen (skip initial call)
+store.$value.listen((value) => {
+  console.log("Changed to:", value);
+});
+```
+
+### get()
+
+Returns the current value.
+
+```typescript
+const value = store.get(); // string | null
+```
+
+### set(value)
+
+Sets a new value. Writes to all adapters in a fallback chain.
+
+```typescript
+store.set("new value");
+```
+
+<Aside type="note">`set()` only accepts `string`. To clear the value, use `remove()`.</Aside>
+
+### remove()
+
+Removes the value from storage and resets `$value` to `null`.
+
+```typescript
+store.remove();
+// localStorage.getItem("key") === null
+// store.get() === null
+```
+
+### sync()
+
+Force sync from storage to store. Useful when:
+
+- `listen: false` and you want to manually refresh
+- Polling for same-tab changes from other libraries (with `setInterval`)
+- Using adapters without event support (e.g., cookies)
+
+```typescript
+// Manual refresh when listen: false
+store.sync();
+
+// Polling pattern for same-tab changes (not recommended for most cases)
+const interval = setInterval(() => store.sync(), 1000);
+```
+
+<Aside type="note">
+  `sync()` does NOT apply `defaultValue`. It reflects the actual storage state.
+</Aside>
+
+### listener
+
+Controls cross-tab synchronization.
+
+```typescript
+interface StorageListener {
+  on: () => void;
+  off: () => void;
+  toggle: () => void;
+  readonly $on: ReadableAtom<boolean>;
+}
+```
+
+| Member     | Description                                 |
+| ---------- | ------------------------------------------- |
+| `on()`     | Begin listening for external changes        |
+| `off()`    | Stop listening                              |
+| `toggle()` | Toggle listening state                      |
+| `$on`      | Reactive boolean indicating listener status |
+
+<Aside type="caution" title="Same-Tab Limitation">
+  The listener reacts to storage changes from **other tabs/windows** and **DevTools edits**.
+  However, direct `localStorage.setItem()` calls from other code in the **same tab** will NOT
+  trigger updates (browser limitation). Use `sync()` with `setInterval` if you need to detect
+  same-tab changes from other libraries.
+</Aside>
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const usernameStore = createStorageStore(localStorageAdapter, "username");
+
+// Read
+console.log(usernameStore.get()); // null or stored value
+
+// Write
+usernameStore.set("Alice");
+
+// Remove
+usernameStore.remove();
+```
+
+### With Default Value (Initial Only)
+
+```typescript
+const themeStore = createStorageStore(localStorageAdapter, "theme", {
+  defaultValue: "system",
+});
+
+// On first load (storage empty): "system"
+console.log(themeStore.get());
+
+// After remove() or if deleted from another tab: null (not "system")
+themeStore.remove();
+console.log(themeStore.get()); // null
+```
+
+### With Always-On Fallback (Using computed)
+
+```typescript
+import { computed } from "nanostores";
+
+const themeStore = createStorageStore(localStorageAdapter, "theme");
+
+// Always returns a value, never null
+const $theme = computed(themeStore.$value, (v) => v ?? "system");
+
+console.log($theme.get()); // "system" if null, otherwise stored value
+```
+
+### With Cross-Tab Sync
+
+```typescript
+const settingsStore = createStorageStore(localStorageAdapter, "settings", {
+  listen: true,
+  defaultValue: "{}",
+});
+
+// Automatically updates when changed in other tabs
+settingsStore.$value.subscribe((value) => {
+  console.log("Settings updated:", value);
+});
+```
+
+### With Fallback Chain
+
+```typescript
+const sessionStore = createStorageStore(
+  [sessionStorageAdapter, localStorageAdapter],
+  "session-data",
+  { listen: true },
+);
+```
+
+### Manual Listener Control
+
+```typescript
+const store = createStorageStore(localStorageAdapter, "key");
+
+// Start when needed
+store.listener.on();
+console.log(store.listener.$on.get()); // true
+
+// Stop when done
+store.listener.off();
+```
+
+### React Integration
+
+```tsx
+import { useStore } from "@nanostores/react";
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const counterStore = createStorageStore(localStorageAdapter, "counter", {
+  defaultValue: "0",
+});
+
+function Counter() {
+  const count = useStore(counterStore.$value);
+  const value = parseInt(count ?? "0", 10);
+
+  return <button onClick={() => counterStore.set(String(value + 1))}>Count: {value}</button>;
+}
+```
+
+## See Also
+
+- [createStorageValuesStore](/nanostores-storage/api/create-storage-values-store) — Monitor all storage keys
+- [StorageAdapter](/nanostores-storage/api/storage-adapter) — Adapter interface
+- [Cross-Tab Sync](/nanostores-storage/concepts/cross-tab-sync) — How listening works

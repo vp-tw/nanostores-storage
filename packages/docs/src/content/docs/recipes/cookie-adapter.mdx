@@ -1,0 +1,111 @@
+---
+title: Cookie Adapter
+description: Cookie-based storage adapter for cross-subdomain data
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import { CookieAdapterDemo } from "../../../components/CookieAdapterDemo";
+
+A cookie adapter stores data in browser cookies. This is useful when you need:
+
+- **Cross-subdomain sharing** — Data accessible across `app.example.com` and `api.example.com`
+- **Server access** — Data sent with HTTP requests
+- **Legacy compatibility** — Works with older systems expecting cookies
+
+<Aside type="caution">
+Cookies have limitations:
+- ~4KB size limit per cookie
+- ~50 cookies per domain
+- Sent with every HTTP request (bandwidth overhead)
+
+Consider localStorage for most use cases.
+
+</Aside>
+
+## Live Demo
+
+<CookieAdapterDemo client:only="react" />
+
+## Implementation
+
+Cookie adapters are **not included** in the library — you need to implement your own. We recommend using [js-cookie](https://github.com/js-cookie/js-cookie) for cookie handling.
+
+See the demo source code above for a complete implementation example.
+
+## Usage
+
+Once you've created your own `createCookieAdapter` function:
+
+```typescript
+import { createStorageStore } from "@vp-tw/nanostores-storage";
+import { createCookieAdapter } from "./cookie-adapter"; // Your implementation
+
+// Basic usage
+const cookieAdapter = createCookieAdapter();
+const store = createStorageStore(cookieAdapter, "user-token");
+
+// Cross-subdomain
+const sharedAdapter = createCookieAdapter({
+  domain: ".example.com", // Note the leading dot
+  secure: true,
+  sameSite: "lax",
+});
+```
+
+## Cross-Subdomain Example
+
+Share authentication between `app.example.com` and `api.example.com`:
+
+```typescript
+const authAdapter = createCookieAdapter({
+  domain: ".example.com",
+  expires: 7, // 7 days
+  secure: true,
+  sameSite: "strict",
+});
+
+export const authTokenStore = createStorageStore(authAdapter, "auth-token");
+
+export function login(token: string) {
+  authTokenStore.set(token);
+}
+
+export function logout() {
+  authTokenStore.remove();
+}
+```
+
+## Fallback Chain with Cookies
+
+Use localStorage with cookie backup for cross-subdomain sync:
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+import { createCookieAdapter } from "./cookie-adapter";
+
+const store = createStorageStore(
+  [localStorageAdapter, createCookieAdapter({ domain: ".example.com" })],
+  "user-preferences",
+);
+
+// Reads from localStorage first (faster)
+// Writes to both (redundancy + cross-subdomain)
+```
+
+<Aside type="note">
+  Cookies don't fire `StorageEvent` like localStorage. The `subscribe` method returns a no-op, so
+  `listen: true` has no effect. Use `.sync()` with `setInterval` for polling if needed.
+</Aside>
+
+## Security Considerations
+
+1. **Never store sensitive data** in cookies without encryption
+2. **Use `secure: true`** in production (HTTPS only)
+3. **Use `sameSite: "strict"`** for sensitive operations
+4. **Set appropriate expiration** — don't keep data forever
+
+## See Also
+
+- [Custom Adapters](/nanostores-storage/recipes/custom-adapters) — How to build adapters
+- [Memory Adapter](/nanostores-storage/api/memory-adapter) — Testing adapter
+- [Fallback Chains](/nanostores-storage/concepts/fallback-chains) — Combine adapters
