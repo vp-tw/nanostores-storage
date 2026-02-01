@@ -1,11 +1,26 @@
 # @vdustr/template-aio-ts-lib
 
+## 1.1.0
+
+### Minor Changes
+
+- 14c28c2: Initial release of nanostores-storage library
+
+  Features:
+  - `createStorageStore` - Reactive store bound to a single storage key
+  - `createStorageValuesStore` - Reactive store for entire storage contents
+  - Built-in adapters: localStorage, sessionStorage, memory
+  - Fallback chain support for multiple adapters
+  - Cross-tab synchronization via storage events
+  - SSR-safe with lazy adapter initialization
+  - Comprehensive error handling with dev warnings
+  - Full TypeScript support
+
 ## 1.0.0
 
 ### Major Changes
 
 - a37bc26: build: modernize toolchain and dev dependencies
-
   - Replace Prettier with oxfmt for faster formatting
   - Replace npm-run-all with npm-run-all2 (actively maintained fork)
   - Remove .prettierignore and consolidate ignore patterns into .gitignore
