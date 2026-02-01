@@ -1,4 +1,5 @@
 import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+import type { TabItem } from "./demo";
 import { useStore } from "@nanostores/react";
 import {
   createMemoryAdapter,
@@ -11,6 +12,22 @@ import { Database, Eye, EyeOff, Plus, RefreshCw, Trash2 } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "./Button";
+import {
+  ActionCell,
+  DemoContainer,
+  DemoEmpty,
+  DemoInput,
+  DemoRow,
+  DemoStack,
+  DemoTabs,
+  DemoText,
+  DemoTitle,
+  DuplicateWarning,
+  IconButton,
+  KeyCell,
+  StorageTable,
+  ValueCell,
+} from "./demo";
 
 type AdapterType = "localStorage" | "sessionStorage" | "memory";
 
@@ -25,7 +42,6 @@ const StoreRow: React.FC<{
   const value = useStore(store.$value);
   const isListening = useStore(store.listener.$on);
 
-  // Memory adapter doesn't support cross-tab listening
   const supportsListener = adapterType !== "memory";
 
   const toggleListener = () => {
@@ -38,53 +54,36 @@ const StoreRow: React.FC<{
 
   return (
     <tr>
-      <td className="key-cell">{storageKey}</td>
-      <td className="value-cell">
-        <input
+      <KeyCell>{storageKey}</KeyCell>
+      <ValueCell>
+        <DemoInput
           type="text"
           value={value ?? ""}
           onChange={(e) => store.set(e.target.value)}
-          className="demo-input"
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8125rem" }}
         />
-      </td>
-      <td className="action-cell">
-        <div className="demo-row">
-          {supportsListener && (
-            <>
-              <Button
-                onClick={toggleListener}
-                className={`demo-icon-button ${isListening ? "active" : ""}`}
-                title={
-                  isListening
-                    ? "Listener ON - click to turn off"
-                    : "Listener OFF - click to turn on"
-                }
-              >
-                {isListening ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </Button>
-              <Button
-                onClick={() => store.sync()}
-                className="demo-icon-button"
-                title="Sync from storage"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            </>
-          )}
-          <Button onClick={onDelete} className="demo-icon-button danger" title="Delete">
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </td>
+      </ValueCell>
+      <ActionCell>
+        {supportsListener && (
+          <>
+            <IconButton
+              icon={isListening ? Eye : EyeOff}
+              onClick={toggleListener}
+              title={
+                isListening ? "Listener ON - click to turn off" : "Listener OFF - click to turn on"
+              }
+              variant={isListening ? "active" : "default"}
+            />
+            <IconButton icon={RefreshCw} onClick={() => store.sync()} title="Sync from storage" />
+          </>
+        )}
+        <IconButton icon={Trash2} onClick={onDelete} title="Delete" variant="danger" />
+      </ActionCell>
     </tr>
   );
 };
 
-const tabs: Array<{
-  key: AdapterType;
-  label: React.ReactNode;
-}> = [
+const tabs: Array<TabItem<AdapterType>> = [
   { key: "localStorage", label: "localStorage" },
   { key: "sessionStorage", label: "sessionStorage" },
   { key: "memory", label: "memory" },
@@ -97,14 +96,11 @@ const StorageStoreDemoView: React.FC<{
   const [activeTab, setActiveTab] = React.useState<AdapterType>("localStorage");
   const [newKey, setNewKey] = React.useState("");
 
-  // Store instances for each adapter/key combination
   const [stores, setStores] = React.useState<Record<string, StoreInstance>>(() => {
-    // Initialize stores for existing keys on mount
     const initialStores: Record<string, StoreInstance> = {};
     for (const [adapterKey, monitor] of Object.entries(monitors)) {
       for (const key of Object.keys(monitor.$value.get())) {
         const storeKey = `${adapterKey}:${key}`;
-        // Memory adapter doesn't support cross-tab listening
         const listen = adapterKey !== "memory";
         initialStores[storeKey] = createStorageStore(adapters[adapterKey as AdapterType], key, {
           listen,
@@ -119,25 +115,20 @@ const StorageStoreDemoView: React.FC<{
     storesRef.current = stores;
   }, [stores]);
 
-  // Subscribe to the active monitor's values
   const activeMonitor = monitors[activeTab];
   const values = useStore(activeMonitor.$value);
-
   const keys = Object.keys(values);
 
-  // Create stores for new keys, cleanup stores for removed keys
   React.useEffect(() => {
     const unsubscribes = Object.entries(monitors).map(([adapterKey, monitor]) =>
       monitor.$value.subscribe((current, oldValue) => {
         const currentKeys = new Set(Object.keys(current));
         const oldKeys = oldValue ? new Set(Object.keys(oldValue)) : new Set<string>();
 
-        // Create stores for new keys
         for (const key of currentKeys) {
           if (!oldKeys.has(key)) {
             const storeKey = `${adapterKey}:${key}`;
             if (!storesRef.current[storeKey]) {
-              // Memory adapter doesn't support cross-tab listening
               const listen = adapterKey !== "memory";
               const store = createStorageStore(adapters[adapterKey as AdapterType], key, {
                 listen,
@@ -147,7 +138,6 @@ const StorageStoreDemoView: React.FC<{
           }
         }
 
-        // Cleanup stores for removed keys
         for (const key of oldKeys) {
           if (!currentKeys.has(key)) {
             const storeKey = `${adapterKey}:${key}`;
@@ -172,14 +162,12 @@ const StorageStoreDemoView: React.FC<{
     const trimmedKey = newKey.trim();
     if (!trimmedKey || keys.includes(trimmedKey)) return;
 
-    // Set empty string to create the key
     activeMonitor.set(trimmedKey, "");
     setNewKey("");
   }, [newKey, keys, activeMonitor]);
 
   const deleteKey = React.useCallback(
     (key: string) => {
-      // Use update to delete the key - cleanup handled by subscribe
       activeMonitor.update((current) => {
         const next = { ...current };
         delete next[key];
@@ -191,91 +179,70 @@ const StorageStoreDemoView: React.FC<{
 
   const isDuplicate = keys.includes(newKey.trim());
 
+  const tabsWithCount = tabs.map((tab) => ({
+    ...tab,
+    count: Object.keys(monitors[tab.key].$value.get()).length,
+  }));
+
   return (
-    <div className="demo-stack">
-      <div className="demo-container">
-        <h3 className="demo-title">
+    <DemoStack>
+      <DemoContainer>
+        <DemoTitle badge={{ variant: "green", children: "Live" }}>
           createStorageStore Demo
-          <span className="badge badge-green">Live</span>
-        </h3>
-        <p className="demo-text" style={{ marginBottom: "1rem" }}>
+        </DemoTitle>
+        <DemoText style={{ marginBottom: "1rem" }}>
           Each row is managed by a <code>createStorageStore</code> instance. Toggle listeners, call
           sync(), edit values, or delete keys.
-        </p>
+        </DemoText>
 
         {/* Tabs */}
-        <div className="demo-tabs" style={{ marginBottom: "1rem" }}>
-          {tabs.map((tab) => (
-            <Button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`demo-tab ${activeTab === tab.key ? "active" : ""}`}
-            >
-              {tab.label}
-              <span className="demo-tab-count">
-                {Object.keys(monitors[tab.key].$value.get()).length}
-              </span>
-            </Button>
-          ))}
-        </div>
+        <DemoTabs
+          tabs={tabsWithCount}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          style={{ marginBottom: "1rem" }}
+        />
 
         {/* Add Key Form */}
-        <div className="demo-row" style={{ marginBottom: "1rem" }}>
-          <input
+        <DemoRow style={{ marginBottom: "1rem" }}>
+          <DemoInput
             type="text"
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addKey()}
             placeholder="new-key"
-            className="demo-input"
             style={{ flex: 1 }}
           />
           <Button onClick={addKey} disabled={!newKey.trim() || isDuplicate} className="demo-button">
             <Plus className="w-4 h-4" />
             Add Key
           </Button>
-        </div>
-        {isDuplicate && newKey.trim() && (
-          <p className="demo-text-sm" style={{ color: "hsl(0, 72%, 60%)", marginBottom: "1rem" }}>
-            Key already exists
-          </p>
-        )}
+        </DemoRow>
+        <DuplicateWarning show={isDuplicate && !!newKey.trim()} message="Key already exists" />
 
         {/* Table */}
         {keys.length === 0 ? (
-          <div className="demo-empty" style={{ padding: "2rem" }}>
-            <Database className="demo-empty-icon" />
-            <p className="demo-empty-title">{activeTab} is empty</p>
-          </div>
+          <DemoEmpty icon={Database} title={`${activeTab} is empty`} style={{ padding: "2rem" }} />
         ) : (
-          <table className="storage-table">
-            <thead>
-              <tr>
-                <th>Key</th>
-                <th>Value</th>
-                <th className="action-cell">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keys.map((key) => {
-                const storeKey = `${activeTab}:${key}`;
-                const store = stores[storeKey];
-                if (!store) return null;
-                return (
-                  <StoreRow
-                    key={key}
-                    storageKey={key}
-                    store={store}
-                    adapterType={activeTab}
-                    onDelete={() => deleteKey(key)}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
+          <StorageTable headers={["Key", "Value", "Actions"]}>
+            {keys.map((key) => {
+              const storeKey = `${activeTab}:${key}`;
+              const store = stores[storeKey];
+              if (!store) return null;
+              return (
+                <StoreRow
+                  key={key}
+                  storageKey={key}
+                  store={store}
+                  adapterType={activeTab}
+                  onDelete={() => deleteKey(key)}
+                />
+              );
+            })}
+          </StorageTable>
         )}
-      </div>
-    </div>
+      </DemoContainer>
+    </DemoStack>
   );
 };
 
@@ -301,12 +268,9 @@ export const StorageStoreDemo: React.FC = () => {
 
   if (!state) {
     return (
-      <div className="demo-container">
-        <div className="demo-empty">
-          <Database className="demo-empty-icon" />
-          <p className="demo-empty-title">Loading...</p>
-        </div>
-      </div>
+      <DemoContainer>
+        <DemoEmpty icon={Database} title="Loading..." />
+      </DemoContainer>
     );
   }
 

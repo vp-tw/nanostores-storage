@@ -87,6 +87,7 @@ export default defineConfig({
           items: [
             { label: "Custom Adapters", slug: "recipes/custom-adapters" },
             { label: "Cookie Adapter", slug: "recipes/cookie-adapter" },
+            { label: "Query String Adapter", slug: "recipes/query-string-adapter" },
           ],
         },
         {

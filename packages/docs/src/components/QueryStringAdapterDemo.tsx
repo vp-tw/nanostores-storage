@@ -1,19 +1,21 @@
 import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+import type { TabItem } from "./demo";
 import { useStore } from "@nanostores/react";
-import { createStorageStore, createStorageValuesStore, noop } from "@vp-tw/nanostores-storage";
-import Cookies from "js-cookie";
-import { Cookie, Plus, RefreshCw, Trash2 } from "lucide-react";
-import * as React from "react";
+import { createStorageStore, createStorageValuesStore } from "@vp-tw/nanostores-storage";
+import { Link2, Plus, RefreshCw, Trash2 } from "lucide-react";
 
+import * as React from "react";
 import { Button } from "./Button";
 import {
   ActionCell,
   DemoContainer,
   DemoEmpty,
   DemoInfo,
+  DemoInfoNote,
   DemoInput,
   DemoRow,
   DemoStack,
+  DemoTabs,
   DemoText,
   DemoTitle,
   DuplicateWarning,
@@ -27,73 +29,79 @@ import {
 type StoreInstance = ReturnType<typeof createStorageStore>;
 
 const GITHUB_SOURCE_URL =
-  "https://github.com/vp-tw/nanostores-storage/blob/main/packages/docs/src/components/CookieAdapterDemo.tsx";
+  "https://github.com/vp-tw/nanostores-storage/blob/main/packages/docs/src/components/QueryStringAdapterDemo.tsx";
+
+type HistoryMode = "push" | "replace";
 
 /**
- * Cookie adapter using js-cookie.
- * This is the recommended implementation for production use.
+ * Query String adapter using URLSearchParams and History API.
+ * This demonstrates adapter extensibility - for production use,
+ * consider @vp-tw/nanostores-qs instead.
  */
-function createCookieAdapter(
-  options: {
-    expires?: number;
-    path?: string;
-    domain?: string;
-    secure?: boolean;
-    sameSite?: "strict" | "lax" | "none";
-  } = {},
-): StorageAdapter {
-  const { expires = 365, path = "/", domain, secure, sameSite = "lax" } = options;
+function createQueryStringAdapter(options: { mode?: HistoryMode } = {}): StorageAdapter {
+  const { mode = "replace" } = options;
 
-  const cookieOptions: Cookies.CookieAttributes = {
-    expires,
-    path,
-    domain,
-    secure,
-    sameSite,
+  const updateUrl = (params: URLSearchParams): void => {
+    const newUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+
+    if (mode === "push") {
+      window.history.pushState({}, "", newUrl);
+    } else {
+      window.history.replaceState({}, "", newUrl);
+    }
+  };
+
+  const getParams = (): URLSearchParams => {
+    return new URLSearchParams(window.location.search);
   };
 
   return {
     get(key: string): string | null {
-      return Cookies.get(key) ?? null;
+      return getParams().get(key);
     },
 
     set(key: string, value: string): void {
-      Cookies.set(key, value, cookieOptions);
+      const params = getParams();
+      params.set(key, value);
+      updateUrl(params);
     },
 
     remove(key: string): void {
-      Cookies.remove(key, { path, domain });
+      const params = getParams();
+      params.delete(key);
+      updateUrl(params);
     },
 
     getAll(): Record<string, string> {
-      return (Cookies.get() as Record<string, string>) ?? {};
+      const result: Record<string, string> = {};
+      for (const [key, value] of getParams().entries()) {
+        result[key] = value;
+      }
+      return result;
     },
 
     setAll(values: Record<string, string>): void {
-      const existing = Cookies.get();
-
-      for (const key of Object.keys(existing)) {
-        if (!(key in values)) {
-          Cookies.remove(key, { path, domain });
-        }
-      }
-
+      const params = new URLSearchParams();
       for (const [key, value] of Object.entries(values)) {
-        if (existing[key] !== value) {
-          Cookies.set(key, value, cookieOptions);
-        }
+        params.set(key, value);
       }
+      updateUrl(params);
     },
 
     clear(): void {
-      const existing = Cookies.get();
-      for (const key of Object.keys(existing)) {
-        Cookies.remove(key, { path, domain });
-      }
+      updateUrl(new URLSearchParams());
     },
 
-    subscribe(): () => void {
-      return noop;
+    subscribe(callback: (key: string | null) => void): () => void {
+      const handler = (): void => {
+        callback(null);
+      };
+      window.addEventListener("popstate", handler);
+      return () => {
+        window.removeEventListener("popstate", handler);
+      };
     },
   };
 }
@@ -117,17 +125,24 @@ const StoreRow: React.FC<{
         />
       </ValueCell>
       <ActionCell>
-        <IconButton icon={RefreshCw} onClick={() => store.sync()} title="Sync from storage" />
+        <IconButton icon={RefreshCw} onClick={() => store.sync()} title="Sync from URL" />
         <IconButton icon={Trash2} onClick={onDelete} title="Delete" variant="danger" />
       </ActionCell>
     </tr>
   );
 };
 
-const CookieAdapterDemoView: React.FC<{
+const modeTabs: Array<TabItem<HistoryMode>> = [
+  { key: "push", label: "pushState" },
+  { key: "replace", label: "replaceState" },
+];
+
+const QueryStringAdapterDemoView: React.FC<{
   adapter: StorageAdapter;
   monitor: ReturnType<typeof createStorageValuesStore>;
-}> = ({ adapter, monitor }) => {
+  mode: HistoryMode;
+  onModeChange: (mode: HistoryMode) => void;
+}> = ({ adapter, monitor, mode, onModeChange }) => {
   const [newKey, setNewKey] = React.useState("");
 
   const [stores, setStores] = React.useState<Record<string, StoreInstance>>(() => {
@@ -202,14 +217,19 @@ const CookieAdapterDemoView: React.FC<{
   return (
     <DemoStack>
       <DemoContainer>
-        <DemoTitle icon={Cookie} badge={{ variant: "purple", children: "Live" }}>
-          Cookie Adapter Demo
+        <DemoTitle icon={Link2} badge={{ variant: "purple", children: "Live" }}>
+          Query String Adapter Demo
         </DemoTitle>
         <DemoText style={{ marginBottom: "1rem" }}>
-          Each row is managed by a <code>createStorageStore</code> instance with a cookie adapter
-          using <a href="https://github.com/js-cookie/js-cookie">js-cookie</a>. Edit values, call
-          sync() to refresh, or delete keys.
+          Each row is managed by a <code>createStorageStore</code> instance with a query string
+          adapter. Watch the URL change as you edit values!
         </DemoText>
+
+        {/* Mode Toggle */}
+        <DemoRow style={{ marginBottom: "1rem" }}>
+          <DemoText>History Mode:</DemoText>
+          <DemoTabs tabs={modeTabs} activeTab={mode} onTabChange={onModeChange} />
+        </DemoRow>
 
         {/* Add Key Form */}
         <DemoRow style={{ marginBottom: "1rem" }}>
@@ -218,22 +238,25 @@ const CookieAdapterDemoView: React.FC<{
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addKey()}
-            placeholder="new-cookie-name"
+            placeholder="new-param-name"
             style={{ flex: 1 }}
           />
           <Button onClick={addKey} disabled={!newKey.trim() || isDuplicate} className="demo-button">
             <Plus className="w-4 h-4" />
-            Add Cookie
+            Add Param
           </Button>
         </DemoRow>
-        <DuplicateWarning show={isDuplicate && !!newKey.trim()} message="Cookie already exists" />
+        <DuplicateWarning
+          show={isDuplicate && !!newKey.trim()}
+          message="Parameter already exists"
+        />
 
         {/* Table */}
         {keys.length === 0 ? (
           <DemoEmpty
-            icon={Cookie}
-            title="No cookies found"
-            text="Add a cookie above to see it appear here."
+            icon={Link2}
+            title="No query parameters"
+            text="Add a parameter above to see it in the URL."
             style={{ padding: "2rem" }}
           />
         ) : (
@@ -255,46 +278,80 @@ const CookieAdapterDemoView: React.FC<{
       </DemoContainer>
 
       {/* Info Box */}
-      <DemoInfo title="About Cookie Adapter">
+      <DemoInfo title="About Query String Adapter">
         <ul>
-          <li>Cookies have a ~4KB size limit per cookie</li>
-          <li>Cookies are sent with every HTTP request (use sparingly for bandwidth)</li>
           <li>
-            <strong>No cross-tab listening:</strong> Unlike localStorage, cookies don't fire
-            cross-tab events. The <code>subscribe</code> method returns a no-op.
+            <strong>pushState</strong> creates browser history entries (back button works)
           </li>
           <li>
-            Use the <strong>Sync</strong> button or call <code>.sync()</code> to refresh after
-            external changes. For polling, use <code>setInterval(() =&gt; store.sync(), 1000)</code>
-            .
+            <strong>replaceState</strong> updates URL without history (cleaner for frequent updates)
           </li>
-          <li>Great for: cross-subdomain sharing, server-side access, legacy systems</li>
+          <li>
+            <strong>popstate</strong> event fires on back/forward navigation, triggering sync
+          </li>
+          <li>URL length limits apply (~2000 chars recommended max)</li>
+          <li>Great for: shareable state, bookmarkable URLs, deep linking</li>
         </ul>
+        <DemoInfoNote>
+          <strong>Note:</strong> This adapter demonstrates extensibility. For production use,
+          consider{" "}
+          <a
+            href="https://github.com/vp-tw/nanostores-qs"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "hsl(45, 70%, 25%)", textDecoration: "underline" }}
+          >
+            @vp-tw/nanostores-qs
+          </a>{" "}
+          which provides typed schemas, validation, and more features.
+        </DemoInfoNote>
         <GithubSourceLink href={GITHUB_SOURCE_URL} />
       </DemoInfo>
     </DemoStack>
   );
 };
 
-export const CookieAdapterDemo: React.FC = () => {
+const QueryStringAdapterDemoInner: React.FC<{
+  mode: HistoryMode;
+  onModeChange: (mode: HistoryMode) => void;
+}> = ({ mode, onModeChange }) => {
   const [state] = React.useState(() => {
     if (typeof window === "undefined") {
       return null;
     }
-    const adapter = createCookieAdapter({ expires: 7 });
+    const adapter = createQueryStringAdapter({ mode });
     return {
       adapter,
-      monitor: createStorageValuesStore(adapter),
+      monitor: createStorageValuesStore(adapter, { listen: true }),
     };
   });
+
+  React.useEffect(() => {
+    return () => {
+      state?.monitor.listener.off();
+    };
+  }, [state]);
 
   if (!state) {
     return (
       <DemoContainer>
-        <DemoEmpty icon={Cookie} title="Loading..." />
+        <DemoEmpty icon={Link2} title="Loading..." />
       </DemoContainer>
     );
   }
 
-  return <CookieAdapterDemoView adapter={state.adapter} monitor={state.monitor} />;
+  return (
+    <QueryStringAdapterDemoView
+      adapter={state.adapter}
+      monitor={state.monitor}
+      mode={mode}
+      onModeChange={onModeChange}
+    />
+  );
+};
+
+export const QueryStringAdapterDemo: React.FC = () => {
+  const [mode, setMode] = React.useState<HistoryMode>("replace");
+
+  return <QueryStringAdapterDemoInner key={mode} mode={mode} onModeChange={setMode} />;
 };
