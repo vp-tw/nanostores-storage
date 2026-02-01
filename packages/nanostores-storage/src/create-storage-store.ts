@@ -188,6 +188,9 @@ export function createStorageStore(
     const storageValue = readFromAdapters(adapters, key);
 
     // Only write to storage if value is different
+    // Note: value is guaranteed to be string here since set() only accepts string
+    // and null paths (remove/sync) use isInternalUpdate flag, but we keep the
+    // null check for TypeScript type narrowing
     if (value !== null && value !== storageValue) {
       writeToAdapters(adapters, key, value);
     }

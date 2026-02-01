@@ -53,14 +53,20 @@ function createCookieAdapter(
     },
 
     setAll(values: Record<string, string>): void {
-      // Remove all existing cookies
       const existing = Cookies.get();
+
+      // Remove cookies that are no longer present in the new values
       for (const key of Object.keys(existing)) {
-        Cookies.remove(key, { path, domain });
+        if (!(key in values)) {
+          Cookies.remove(key, { path, domain });
+        }
       }
-      // Set new cookies
+
+      // Set new or updated cookies (only if value changed)
       for (const [key, value] of Object.entries(values)) {
-        Cookies.set(key, value, cookieOptions);
+        if (existing[key] !== value) {
+          Cookies.set(key, value, cookieOptions);
+        }
       }
     },
 
