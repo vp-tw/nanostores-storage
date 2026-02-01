@@ -1,5 +1,12 @@
 # @vdustr/template-aio-ts-lib
 
+## 0.0.2
+
+### Patch Changes
+
+- 44aee7c: Add favicon and OG image for documentation site branding
+- 79c7f04: Add Query String Adapter recipe and refactor demo components to use shared components
+
 ## 1.1.0
 
 ### Minor Changes
@@ -7,6 +14,7 @@
 - 14c28c2: Initial release of nanostores-storage library
 
   Features:
+
   - `createStorageStore` - Reactive store bound to a single storage key
   - `createStorageValuesStore` - Reactive store for entire storage contents
   - Built-in adapters: localStorage, sessionStorage, memory
