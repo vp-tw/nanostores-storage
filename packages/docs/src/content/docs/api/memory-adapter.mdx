@@ -1,0 +1,129 @@
+---
+title: createMemoryAdapter
+description: Built-in in-memory storage adapter for testing and SSR
+---
+
+Creates an in-memory storage adapter. Data is stored in JavaScript memory and lost on page refresh.
+
+## Use Cases
+
+- **Testing** — Isolated storage for each test
+- **SSR** — Server-side rendering where browser APIs aren't available
+- **Demos** — Interactive examples without polluting real storage
+
+Try it in the [createStorageStore Demo](/nanostores-storage/demo/storage-store) — select "memoryAdapter" when creating a store.
+
+## Usage
+
+The memory adapter is built-in and can be imported directly:
+
+```typescript
+import { createStorageStore, createMemoryAdapter } from "@vp-tw/nanostores-storage";
+
+const memoryAdapter = createMemoryAdapter();
+
+const store = createStorageStore(memoryAdapter, "test-key", {
+  defaultValue: "initial",
+});
+
+store.set("updated");
+console.log(store.get()); // "updated"
+
+// Data is isolated to this adapter instance
+```
+
+## Pre-populated Data
+
+You can initialize with existing data:
+
+```typescript
+import { createMemoryAdapter } from "@vp-tw/nanostores-storage";
+
+const adapter = createMemoryAdapter({
+  theme: "dark",
+  language: "en",
+});
+
+console.log(adapter.get("theme")); // "dark"
+```
+
+## Testing Example
+
+```typescript
+import { describe, it, expect, beforeEach } from "vitest";
+import { createStorageStore, createMemoryAdapter } from "@vp-tw/nanostores-storage";
+
+describe("my feature", () => {
+  let adapter: ReturnType<typeof createMemoryAdapter>;
+
+  beforeEach(() => {
+    // Fresh adapter for each test
+    adapter = createMemoryAdapter();
+  });
+
+  it("stores user preference", () => {
+    const store = createStorageStore(adapter, "theme", {
+      defaultValue: "light",
+    });
+
+    store.set("dark");
+    expect(store.get()).toBe("dark");
+  });
+
+  it("starts fresh each test", () => {
+    const store = createStorageStore(adapter, "theme", {
+      defaultValue: "light",
+    });
+
+    // Previous test's data is gone
+    expect(store.get()).toBe("light");
+  });
+});
+```
+
+## SSR Example
+
+```typescript
+// stores.ts
+import {
+  createStorageStore,
+  localStorageAdapter,
+  createMemoryAdapter,
+} from "@vp-tw/nanostores-storage";
+
+// Use memory adapter on server, localStorage on client
+const adapter = typeof window === "undefined" ? createMemoryAdapter() : localStorageAdapter;
+
+export const themeStore = createStorageStore(adapter, "theme", {
+  defaultValue: "system",
+});
+```
+
+## Singleton Pattern
+
+If you need shared memory storage across your app:
+
+```typescript
+// memory-adapter.ts
+import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+import { createMemoryAdapter } from "@vp-tw/nanostores-storage";
+
+let instance: StorageAdapter | null = null;
+
+export function getMemoryAdapter(): StorageAdapter {
+  if (!instance) {
+    instance = createMemoryAdapter();
+  }
+  return instance;
+}
+
+export function resetMemoryAdapter(): void {
+  instance = null;
+}
+```
+
+## See Also
+
+- [StorageAdapter](/nanostores-storage/api/storage-adapter) — Adapter interface reference
+- [Custom Adapters](/nanostores-storage/recipes/custom-adapters) — How to build adapters
+- [Cookie Adapter](/nanostores-storage/recipes/cookie-adapter) — Cookie storage example

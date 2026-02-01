@@ -1,0 +1,212 @@
+---
+title: StorageAdapter
+description: API reference for the StorageAdapter interface
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+The `StorageAdapter` interface defines the contract for storage backends. Implement this interface to create custom adapters for cookies, encrypted storage, or any other synchronous backend.
+
+<Aside type="caution" title="Synchronous API">
+  All adapter methods must be **synchronous** (return values immediately, not Promises). Async-only
+  APIs like **IndexedDB** are not directly supported. See [Custom
+  Adapters](/nanostores-storage/recipes/custom-adapters) for workarounds.
+</Aside>
+
+## Interface
+
+```typescript
+interface StorageAdapter {
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+  remove(key: string): void;
+  getAll(): Record<string, string>;
+  setAll(values: Record<string, string>): void;
+  clear(): void;
+  subscribe(callback: (key: string | null) => void): () => void;
+}
+```
+
+## Methods
+
+### get(key)
+
+Retrieves a value by key.
+
+| Parameter   | Type             | Description                       |
+| ----------- | ---------------- | --------------------------------- |
+| `key`       | `string`         | The key to look up                |
+| **Returns** | `string \| null` | The value, or `null` if not found |
+
+```typescript
+const value = adapter.get("username");
+if (value !== null) {
+  console.log("Found:", value);
+}
+```
+
+### set(key, value)
+
+Stores a value.
+
+| Parameter | Type     | Description            |
+| --------- | -------- | ---------------------- |
+| `key`     | `string` | The key to store under |
+| `value`   | `string` | The value to store     |
+
+```typescript
+adapter.set("username", "Alice");
+```
+
+### remove(key)
+
+Removes a value by key.
+
+| Parameter | Type     | Description       |
+| --------- | -------- | ----------------- |
+| `key`     | `string` | The key to remove |
+
+```typescript
+adapter.remove("username");
+```
+
+### getAll()
+
+Retrieves all key-value pairs.
+
+| **Returns** | `Record<string, string>` | All stored key-value pairs |
+
+```typescript
+const all = adapter.getAll();
+// { "key1": "value1", "key2": "value2" }
+```
+
+### setAll(values)
+
+Replaces all stored values. Typically clears existing data first.
+
+| Parameter | Type                     | Description             |
+| --------- | ------------------------ | ----------------------- |
+| `values`  | `Record<string, string>` | The new key-value pairs |
+
+```typescript
+adapter.setAll({ newKey: "newValue" });
+// Previous data is cleared
+```
+
+### clear()
+
+Removes all stored values.
+
+```typescript
+adapter.clear();
+// adapter.getAll() now returns {}
+```
+
+### subscribe(callback)
+
+Subscribes to storage changes. Returns an unsubscribe function.
+
+| Parameter   | Type                            | Description                 |
+| ----------- | ------------------------------- | --------------------------- |
+| `callback`  | `(key: string \| null) => void` | Called when storage changes |
+| **Returns** | `() => void`                    | Unsubscribe function        |
+
+The callback receives:
+
+- `key: string` — The specific key that changed
+- `key: null` — Multiple keys changed (bulk operation)
+
+```typescript
+const unsubscribe = adapter.subscribe((key) => {
+  if (key === null) {
+    console.log("Bulk change detected");
+  } else {
+    console.log("Key changed:", key);
+  }
+});
+
+// Later: stop listening
+unsubscribe();
+```
+
+## Built-in Adapters
+
+### localStorageAdapter
+
+```typescript
+import { localStorageAdapter } from "@vp-tw/nanostores-storage";
+```
+
+Pre-configured adapter for `window.localStorage`.
+
+### sessionStorageAdapter
+
+```typescript
+import { sessionStorageAdapter } from "@vp-tw/nanostores-storage";
+```
+
+Pre-configured adapter for `window.sessionStorage`.
+
+### createWebStorageAdapter(storage)
+
+```typescript
+import { createWebStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const adapter = createWebStorageAdapter(localStorage);
+const adapter = createWebStorageAdapter(sessionStorage);
+```
+
+Factory function to create adapters for any `Storage`-compatible object.
+
+## Creating Custom Adapters
+
+See the [Custom Adapters](/nanostores-storage/recipes/custom-adapters) recipe for complete examples.
+
+### Minimal Example
+
+```typescript
+import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+
+const data = new Map<string, string>();
+const listeners = new Set<(key: string | null) => void>();
+
+const memoryAdapter: StorageAdapter = {
+  get: (key) => data.get(key) ?? null,
+  set: (key, value) => {
+    data.set(key, value);
+    listeners.forEach((cb) => cb(key));
+  },
+  remove: (key) => {
+    data.delete(key);
+    listeners.forEach((cb) => cb(key));
+  },
+  getAll: () => Object.fromEntries(data),
+  setAll: (values) => {
+    data.clear();
+    Object.entries(values).forEach(([k, v]) => data.set(k, v));
+    listeners.forEach((cb) => cb(null));
+  },
+  clear: () => {
+    data.clear();
+    listeners.forEach((cb) => cb(null));
+  },
+  subscribe: (callback) => {
+    listeners.add(callback);
+    return () => listeners.delete(callback);
+  },
+};
+```
+
+## Type Export
+
+```typescript
+import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+```
+
+## See Also
+
+- [Storage Adapters Concept](/nanostores-storage/concepts/adapters) — Overview of adapters
+- [Custom Adapters Recipe](/nanostores-storage/recipes/custom-adapters) — Build your own
+- [Memory Adapter Recipe](/nanostores-storage/api/memory-adapter) — In-memory adapter example
+- [Cookie Adapter Recipe](/nanostores-storage/recipes/cookie-adapter) — Cookie-based adapter example

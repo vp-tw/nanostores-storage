@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "paths": {
+      "@vp-tw/nanostores-storage": ["../nanostores-storage/src/index.ts"],
+      "@vp-tw/nanostores-storage/*": ["../nanostores-storage/src/*"]
+    },
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"
+  },
+  "extends": "astro/tsconfigs/strict"
+}

@@ -1,0 +1,54 @@
+{
+  "name": "@vp-tw/nanostores-storage",
+  "version": "0.0.0",
+  "description": "A powerful integration tool for nanostores with Web Storage APIs (localStorage, sessionStorage, cookies, and memory)",
+  "keywords": [
+    "cookie",
+    "cross-tab",
+    "localStorage",
+    "nanostores",
+    "reactive",
+    "sessionStorage",
+    "state-management",
+    "storage",
+    "sync"
+  ],
+  "homepage": "https://vp-tw.github.io/nanostores-storage",
+  "bugs": {
+    "url": "https://github.com/vp-tw/nanostores-storage/issues"
+  },
+  "license": "MIT",
+  "author": "ViPro <vdustr@gmail.com> (https://vdustr.dev)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vp-tw/nanostores-storage.git",
+    "directory": "packages/nanostores-storage"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "@vitest/browser-playwright": "catalog:",
+    "nanostores": "catalog:",
+    "tsdown": "catalog:"
+  },
+  "peerDependencies": {
+    "nanostores": ">=1.0.0"
+  }
+}

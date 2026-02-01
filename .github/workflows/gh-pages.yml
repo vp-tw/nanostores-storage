@@ -12,11 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      - run: pnpm run --filter template-vite-react-19 build --outDir ../../dist --base=/${{ github.event.repository.name }}/
+      - run: pnpm run --filter @repo/demo build
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: dist
+          folder: packages/demo/dist
           clean: true
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,66 @@
+---
+title: Installation
+description: How to install nanostores-storage in your project
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+## Prerequisites
+
+nanostores-storage requires [nanostores](https://github.com/nanostores/nanostores) as a peer dependency.
+
+## Install
+
+<Tabs>
+  <TabItem label="npm">```bash npm install @vp-tw/nanostores-storage nanostores ```</TabItem>
+  <TabItem label="pnpm">```bash pnpm add @vp-tw/nanostores-storage nanostores ```</TabItem>
+  <TabItem label="yarn">```bash yarn add @vp-tw/nanostores-storage nanostores ```</TabItem>
+  <TabItem label="bun">```bash bun add @vp-tw/nanostores-storage nanostores ```</TabItem>
+</Tabs>
+
+## Framework Integrations
+
+nanostores supports React, Vue, Svelte, Solid, Preact, Angular, and more.
+See [nanostores integrations](https://github.com/nanostores/nanostores#integration) for setup instructions.
+
+Example with React:
+
+```bash
+npm install @nanostores/react
+```
+
+## TypeScript
+
+nanostores-storage is written in TypeScript and includes type definitions. No additional `@types` packages needed.
+
+## Browser Support
+
+nanostores-storage works in all modern browsers that support:
+
+- `localStorage` / `sessionStorage`
+- `StorageEvent` for cross-tab synchronization
+
+| Browser      | Supported |
+| ------------ | --------- |
+| Chrome 4+    | ✅        |
+| Firefox 3.5+ | ✅        |
+| Safari 4+    | ✅        |
+| Edge 12+     | ✅        |
+| IE 8+        | ✅        |
+
+## Bundle Size
+
+nanostores-storage is designed to be lightweight:
+
+| Export                     | Size (minified + gzip) |
+| -------------------------- | ---------------------- |
+| `createStorageStore`       | ~800 bytes             |
+| `createStorageValuesStore` | ~900 bytes             |
+| `localStorageAdapter`      | ~400 bytes             |
+| `sessionStorageAdapter`    | ~400 bytes             |
+
+The library is fully tree-shakeable — only import what you use.
+
+## Next Steps
+
+Continue to the [Quick Start](/nanostores-storage/guides/quick-start) guide to create your first storage store.

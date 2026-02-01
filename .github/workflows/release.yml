@@ -34,8 +34,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  keep-one-ts-lib:
-    name: Keep only one version of template-aio-ts-lib
+  keep-one-version:
+    name: Keep only one version of nanostores-storage
     needs: release
     if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-22.04
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/delete-package-versions@v5
         with:
           package-type: npm
-          package-name: template-aio-ts-lib
+          package-name: nanostores-storage
           token: ${{ secrets.GITHUB_TOKEN }}
           min-versions-to-keep: 1
         # Allow to continue even if the package is not found.

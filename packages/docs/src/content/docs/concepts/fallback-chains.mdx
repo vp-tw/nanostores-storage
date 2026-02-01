@@ -1,0 +1,141 @@
+---
+title: Fallback Chains
+description: Using multiple storage backends with automatic fallback
+---
+
+Fallback chains allow you to use multiple storage adapters together. This is useful for migration scenarios, redundancy, or progressive enhancement.
+
+## How It Works
+
+When you pass an array of adapters to `createStorageStore`:
+
+- **Read**: Returns the first non-null value found (in order)
+- **Write**: Writes to ALL adapters
+- **Listen**: Listens to ALL adapters
+- **Remove**: Removes from ALL adapters
+
+```typescript
+import {
+  createStorageStore,
+  sessionStorageAdapter,
+  localStorageAdapter,
+} from "@vp-tw/nanostores-storage";
+
+const store = createStorageStore(
+  [sessionStorageAdapter, localStorageAdapter], // Fallback chain
+  "user-data",
+);
+```
+
+## Use Cases
+
+### Session with Persistence
+
+Store data in sessionStorage (fast, tab-isolated) with localStorage backup:
+
+```typescript
+const store = createStorageStore([sessionStorageAdapter, localStorageAdapter], "draft-content");
+
+// Read: Prefers sessionStorage, falls back to localStorage
+// Write: Saves to both (redundancy)
+```
+
+### Migration Strategy
+
+When migrating from one storage to another:
+
+```typescript
+// Old: data was in localStorage
+// New: prefer sessionStorage
+
+const store = createStorageStore([sessionStorageAdapter, localStorageAdapter], "legacy-key");
+
+// Reads old data from localStorage if sessionStorage is empty
+// New writes go to both, gradually migrating data
+```
+
+### Cross-Subdomain with Local Fallback
+
+Combine cookies (cross-subdomain) with localStorage (faster):
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+import { createCookieAdapter } from "./my-cookie-adapter";
+
+const cookieAdapter = createCookieAdapter();
+
+const store = createStorageStore([localStorageAdapter, cookieAdapter], "shared-session");
+```
+
+## Read Order Behavior
+
+```typescript
+// Scenario: sessionStorage is empty, localStorage has "cached-value"
+
+const store = createStorageStore([sessionStorageAdapter, localStorageAdapter], "my-key");
+
+store.get(); // Returns "cached-value" (from localStorage)
+
+// After setting a value:
+store.set("new-value");
+
+// Both now have "new-value"
+sessionStorage.getItem("my-key"); // "new-value"
+localStorage.getItem("my-key"); // "new-value"
+```
+
+## Listening Behavior
+
+With `listen: true`, the store reacts to changes from ANY adapter in the chain:
+
+```typescript
+const store = createStorageStore([sessionStorageAdapter, localStorageAdapter], "my-key", {
+  listen: true,
+});
+
+// Changes in localStorage trigger store update
+// Changes in sessionStorage also trigger store update
+// Store always re-reads from the chain (respecting priority order)
+```
+
+## Important Notes
+
+1. **Write Order**: Values are written to adapters in array order
+2. **Atomic Operations**: There's no transaction — if one adapter fails, others may succeed
+3. **Performance**: More adapters = more I/O operations
+4. **Storage Limits**: Each adapter has its own limits
+
+## Example: Complete Setup
+
+```typescript
+import {
+  createStorageStore,
+  sessionStorageAdapter,
+  localStorageAdapter,
+} from "@vp-tw/nanostores-storage";
+
+// User preferences with session override
+const prefsStore = createStorageStore(
+  [sessionStorageAdapter, localStorageAdapter],
+  "user-preferences",
+  {
+    defaultValue: JSON.stringify({ theme: "system", language: "en" }),
+    listen: true,
+  },
+);
+
+// Helper to work with JSON
+function getPrefs() {
+  const raw = prefsStore.get();
+  return raw ? JSON.parse(raw) : { theme: "system", language: "en" };
+}
+
+function setPrefs(prefs: { theme: string; language: string }) {
+  prefsStore.set(JSON.stringify(prefs));
+}
+```
+
+## Next Steps
+
+- [Cross-Tab Sync](/nanostores-storage/concepts/cross-tab-sync) — How listening works
+- [Custom Adapters](/nanostores-storage/recipes/custom-adapters) — Create your own adapters

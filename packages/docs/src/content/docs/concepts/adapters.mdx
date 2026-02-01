@@ -1,0 +1,132 @@
+---
+title: Storage Adapters
+description: Understanding built-in and custom storage adapters
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Storage adapters are the bridge between nanostores-storage and actual storage backends. They provide a unified interface for reading, writing, and listening to storage changes.
+
+<Aside type="note">
+  All adapter methods must be **synchronous**. Async-only storage APIs like IndexedDB require a
+  wrapper pattern (e.g., memory cache with async persistence). See [Custom
+  Adapters](/nanostores-storage/recipes/custom-adapters) for details.
+</Aside>
+
+## Built-in Adapters
+
+nanostores-storage includes two pre-configured adapters:
+
+### localStorageAdapter
+
+Persistent storage that survives browser restarts. Data is shared across all tabs of the same origin.
+
+```typescript
+import { createStorageStore, localStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const store = createStorageStore(localStorageAdapter, "my-key");
+```
+
+**Characteristics:**
+
+- Persists until explicitly cleared
+- ~5MB storage limit per origin
+- Fires `storage` events across tabs
+- Synchronous API
+
+### sessionStorageAdapter
+
+Session-scoped storage that is cleared when the tab closes. Each tab has its own isolated storage.
+
+```typescript
+import { createStorageStore, sessionStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const store = createStorageStore(sessionStorageAdapter, "session-key");
+```
+
+**Characteristics:**
+
+- Cleared when tab/window closes
+- ~5MB storage limit per origin
+- Does NOT sync across tabs (isolated per tab)
+- Synchronous API
+
+## Adapter Interface
+
+All adapters implement the `StorageAdapter` interface:
+
+```typescript
+interface StorageAdapter {
+  // Read a single value
+  get(key: string): string | null;
+
+  // Write a single value
+  set(key: string, value: string): void;
+
+  // Remove a single value
+  remove(key: string): void;
+
+  // Read all key-value pairs
+  getAll(): Record<string, string>;
+
+  // Replace all values
+  setAll(values: Record<string, string>): void;
+
+  // Clear all values
+  clear(): void;
+
+  // Subscribe to changes (returns unsubscribe function)
+  subscribe(callback: (key: string | null) => void): () => void;
+}
+```
+
+## Creating Custom Adapters
+
+You can create adapters for any storage backend. See the [Custom Adapters](/nanostores-storage/recipes/custom-adapters) recipe for examples.
+
+```typescript
+import type { StorageAdapter } from "@vp-tw/nanostores-storage";
+
+const myAdapter: StorageAdapter = {
+  get: (key) => /* ... */,
+  set: (key, value) => /* ... */,
+  remove: (key) => /* ... */,
+  getAll: () => /* ... */,
+  setAll: (values) => /* ... */,
+  clear: () => /* ... */,
+  subscribe: (callback) => /* return unsubscribe */,
+};
+```
+
+## Using createWebStorageAdapter
+
+For Web Storage-compatible backends, use the factory function:
+
+```typescript
+import { createWebStorageAdapter } from "@vp-tw/nanostores-storage";
+
+// Create adapter for any Storage-compatible object
+const adapter = createWebStorageAdapter(localStorage);
+const adapter = createWebStorageAdapter(sessionStorage);
+```
+
+This is how `localStorageAdapter` and `sessionStorageAdapter` are created internally.
+
+## Choosing an Adapter
+
+| Use Case              | Recommended Adapter           |
+| --------------------- | ----------------------------- |
+| User preferences      | `localStorageAdapter`         |
+| Authentication tokens | `sessionStorageAdapter`       |
+| Shopping cart         | `localStorageAdapter`         |
+| Form draft data       | `sessionStorageAdapter`       |
+| Cross-subdomain data  | Custom cookie adapter         |
+| Large data (>5MB)     | IndexedDB with memory cache\* |
+
+\*IndexedDB is async-only. Use a memory adapter for synchronous reads, with IndexedDB as the persistence layer. See [Custom Adapters](/nanostores-storage/recipes/custom-adapters) for guidance.
+
+## Next Steps
+
+- [Fallback Chains](/nanostores-storage/concepts/fallback-chains) — Combine multiple adapters
+- [Cross-Tab Sync](/nanostores-storage/concepts/cross-tab-sync) — Listen for external changes
+- [Custom Adapters](/nanostores-storage/recipes/custom-adapters) — Build your own adapter

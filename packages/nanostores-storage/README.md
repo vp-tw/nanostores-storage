@@ -1,4 +1,4 @@
-# nanostores-storage
+# @vp-tw/nanostores-storage
 
 A [nanostores](https://github.com/nanostores/nanostores) integration for Web Storage APIs (localStorage, sessionStorage, cookies, and memory).
 
