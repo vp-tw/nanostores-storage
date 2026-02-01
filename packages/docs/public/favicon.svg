@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>nanostores-storage</title>
+  <!-- Top face -->
+  <path d="M 50.00,5.00 L 88.97,27.50 L 50.00,50.00 L 11.03,27.50 Z" fill="#1aba82"/>
+  <!-- Left face -->
+  <path d="M 11.03,27.50 L 50.00,50.00 L 50.00,95.00 L 11.03,72.50 Z" fill="#038052"/>
+  <!-- Right face -->
+  <path d="M 50.00,50.00 L 88.97,27.50 L 88.97,72.50 L 50.00,95.00 Z" fill="#036840"/>
+</svg>
