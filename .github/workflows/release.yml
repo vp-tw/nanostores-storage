@@ -11,8 +11,6 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    outputs:
-      published: ${{ steps.changesets.outputs.published }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -33,22 +31,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  keep-one-version:
-    name: Keep only one version of nanostores-storage
-    needs: release
-    if: needs.release.outputs.published == 'true'
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/delete-package-versions@v5
-        with:
-          package-type: npm
-          package-name: nanostores-storage
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-versions-to-keep: 1
-        # Allow to continue even if the package is not found.
-        #
-        # ```
-        # Error: delete version API failed. Package not found.
-        # ```
-        continue-on-error: true
