@@ -2,15 +2,59 @@ import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 
+const OG_IMAGE_URL = "https://vp-tw.github.io/nanostores-storage/og-image.png";
+
 export default defineConfig({
   base: "/nanostores-storage",
   integrations: [
     starlight({
-      title: "nanostores-storage",
+      title: "@vp-tw/nanostores-storage",
       description: "A powerful integration tool for nanostores with Web Storage APIs",
+      logo: {
+        src: "./public/favicon.svg",
+        replacesTitle: false,
+      },
+      favicon: "/favicon.svg",
       social: {
         github: "https://github.com/vp-tw/nanostores-storage",
       },
+      head: [
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image",
+            content: OG_IMAGE_URL,
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image:width",
+            content: "1200",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image:height",
+            content: "630",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:card",
+            content: "summary_large_image",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:image",
+            content: OG_IMAGE_URL,
+          },
+        },
+      ],
       customCss: ["./src/styles/custom.css"],
       sidebar: [
         {
