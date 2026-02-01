@@ -2,7 +2,6 @@
   "files": [],
   "references": [
     { "path": "./tsconfig.node.json" },
-    { "path": "./packages/docs/tsconfig.json" },
     { "path": "./packages/nanostores-storage/tsconfig.lib.json" },
     { "path": "./packages/nanostores-storage/tsconfig.node.json" }
   ]

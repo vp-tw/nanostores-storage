@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "astro build",
+    "check": "astro check",
     "dev": "astro dev",
     "preview": "astro preview"
   },
@@ -23,6 +24,7 @@
     "sharp": "catalog:"
   },
   "devDependencies": {
+    "@astrojs/check": "catalog:",
     "@types/js-cookie": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:"
