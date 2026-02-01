@@ -1,4 +1,5 @@
 import type { StorageValuesStore } from "@vp-tw/nanostores-storage";
+import type { TabItem } from "./demo";
 import { useStore } from "@nanostores/react";
 import {
   createStorageValuesStore,
@@ -9,6 +10,25 @@ import { Database, Plus, RefreshCw, Trash2 } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "./Button";
+import {
+  Badge,
+  DemoContainer,
+  DemoEmpty,
+  DemoInfo,
+  DemoInput,
+  DemoLabel,
+  DemoRow,
+  DemoRowBetween,
+  DemoStack,
+  DemoTabs,
+  DemoTitle,
+  IconButton,
+  KeyCell,
+  StorageTable,
+  ValueCell,
+} from "./demo";
+
+type StorageType = "localStorage" | "sessionStorage";
 
 const StorageRow: React.FC<{
   storageKey: string;
@@ -18,28 +38,30 @@ const StorageRow: React.FC<{
 }> = ({ storageKey, value, onUpdate, onDelete }) => {
   return (
     <tr>
-      <td className="key-cell">{storageKey}</td>
-      <td className="value-cell">
-        <input
+      <KeyCell>{storageKey}</KeyCell>
+      <ValueCell>
+        <DemoInput
           type="text"
           value={value}
           onChange={(e) => onUpdate(e.target.value)}
-          className="demo-input"
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8125rem" }}
         />
-      </td>
+      </ValueCell>
       <td className="action-cell">
-        <Button onClick={onDelete} className="demo-icon-button danger" title="Delete">
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <IconButton icon={Trash2} onClick={onDelete} title="Delete" variant="danger" />
       </td>
     </tr>
   );
 };
 
+const tabs: Array<TabItem<StorageType>> = [
+  { key: "localStorage", label: "localStorage" },
+  { key: "sessionStorage", label: "sessionStorage" },
+];
+
 const StorageValuesView: React.FC<{
-  activeTab: "localStorage" | "sessionStorage";
-  setActiveTab: (tab: "localStorage" | "sessionStorage") => void;
+  activeTab: StorageType;
+  setActiveTab: (tab: StorageType) => void;
   store: StorageValuesStore;
 }> = ({ activeTab, setActiveTab, store }) => {
   const values = useStore(store.$value);
@@ -80,34 +102,24 @@ const StorageValuesView: React.FC<{
   const entries = Object.entries(values);
 
   return (
-    <div className="demo-stack">
+    <DemoStack>
       {/* Tab Selector & Controls */}
-      <div className="demo-container">
-        <div className="demo-tabs" style={{ marginBottom: "1rem" }}>
-          <Button
-            onClick={() => setActiveTab("localStorage")}
-            className={`demo-tab ${activeTab === "localStorage" ? "active" : ""}`}
-          >
-            localStorage
-          </Button>
-          <Button
-            onClick={() => setActiveTab("sessionStorage")}
-            className={`demo-tab ${activeTab === "sessionStorage" ? "active" : ""}`}
-          >
-            sessionStorage
-          </Button>
-        </div>
+      <DemoContainer>
+        <DemoTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          style={{ marginBottom: "1rem" }}
+        />
 
-        <div className="demo-row-between">
-          <div className="demo-row">
-            <h3 className="demo-title" style={{ margin: 0 }}>
-              {activeTab}
-            </h3>
-            <span className={`badge ${isListening ? "badge-green" : "badge-gray"}`}>
+        <DemoRowBetween>
+          <DemoRow>
+            <DemoTitle style={{ margin: 0 }}>{activeTab}</DemoTitle>
+            <Badge variant={isListening ? "green" : "gray"}>
               {isListening ? "Listening" : "Paused"}
-            </span>
-          </div>
-          <div className="demo-row">
+            </Badge>
+          </DemoRow>
+          <DemoRow>
             <Button
               onClick={toggleListener}
               className="demo-button-secondary demo-button"
@@ -133,13 +145,13 @@ const StorageValuesView: React.FC<{
               <Trash2 className="w-3.5 h-3.5" />
               Clear All
             </Button>
-          </div>
-        </div>
-      </div>
+          </DemoRow>
+        </DemoRowBetween>
+      </DemoContainer>
 
       {/* Add Entry Form */}
-      <div className="demo-container">
-        <h3 className="demo-title">Add Entry</h3>
+      <DemoContainer>
+        <DemoTitle>Add Entry</DemoTitle>
         <div
           style={{
             display: "grid",
@@ -149,25 +161,23 @@ const StorageValuesView: React.FC<{
           }}
         >
           <div>
-            <label className="demo-label">Key</label>
-            <input
+            <DemoLabel>Key</DemoLabel>
+            <DemoInput
               type="text"
               value={newKey}
               onChange={(e) => setNewKey(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addEntry()}
               placeholder="my-key"
-              className="demo-input"
             />
           </div>
           <div>
-            <label className="demo-label">Value</label>
-            <input
+            <DemoLabel>Value</DemoLabel>
+            <DemoInput
               type="text"
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addEntry()}
               placeholder="my-value"
-              className="demo-input"
             />
           </div>
           <Button onClick={addEntry} disabled={!newKey.trim()} className="demo-button">
@@ -175,50 +185,37 @@ const StorageValuesView: React.FC<{
             Add
           </Button>
         </div>
-      </div>
+      </DemoContainer>
 
       {/* Storage Contents */}
-      <div className="demo-container">
-        <h3 className="demo-title">
+      <DemoContainer>
+        <DemoTitle badge={{ variant: "gray", children: String(entries.length) }}>
           Contents
-          <span className="badge badge-gray">{entries.length}</span>
-        </h3>
+        </DemoTitle>
 
         {entries.length === 0 ? (
-          <div className="demo-empty">
-            <Database className="demo-empty-icon" />
-            <p className="demo-empty-title">No entries in {activeTab}</p>
-            <p className="demo-empty-text">
-              Add one above or changes from other tabs will appear automatically.
-            </p>
-          </div>
+          <DemoEmpty
+            icon={Database}
+            title={`No entries in ${activeTab}`}
+            text="Add one above or changes from other tabs will appear automatically."
+          />
         ) : (
-          <table className="storage-table">
-            <thead>
-              <tr>
-                <th>Key</th>
-                <th>Value</th>
-                <th className="action-cell">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map(([key, value]) => (
-                <StorageRow
-                  key={key}
-                  storageKey={key}
-                  value={value}
-                  onUpdate={(newValue) => store.set(key, newValue)}
-                  onDelete={() => deleteKey(key)}
-                />
-              ))}
-            </tbody>
-          </table>
+          <StorageTable headers={["Key", "Value", "Actions"]}>
+            {entries.map(([key, value]) => (
+              <StorageRow
+                key={key}
+                storageKey={key}
+                value={value}
+                onUpdate={(newValue) => store.set(key, newValue)}
+                onDelete={() => deleteKey(key)}
+              />
+            ))}
+          </StorageTable>
         )}
-      </div>
+      </DemoContainer>
 
       {/* Info Box */}
-      <div className="demo-info">
-        <h4 className="demo-info-title">How it works</h4>
+      <DemoInfo title="How it works">
         <ul>
           <li>
             This demo uses <code>createStorageValuesStore</code> with <code>listen: true</code>
@@ -227,15 +224,13 @@ const StorageValuesView: React.FC<{
           <li>Changes from other browser tabs will appear automatically</li>
           <li>Try opening this page in another tab and making changes!</li>
         </ul>
-      </div>
-    </div>
+      </DemoInfo>
+    </DemoStack>
   );
 };
 
 export const StorageValuesDemo: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState<"localStorage" | "sessionStorage">(
-    "localStorage",
-  );
+  const [activeTab, setActiveTab] = React.useState<StorageType>("localStorage");
 
   const [stores] = React.useState(() => {
     if (typeof window === "undefined") {
@@ -249,12 +244,9 @@ export const StorageValuesDemo: React.FC = () => {
 
   if (!stores) {
     return (
-      <div className="demo-container">
-        <div className="demo-empty">
-          <Database className="demo-empty-icon" />
-          <p className="demo-empty-title">Loading...</p>
-        </div>
-      </div>
+      <DemoContainer>
+        <DemoEmpty icon={Database} title="Loading..." />
+      </DemoContainer>
     );
   }
 

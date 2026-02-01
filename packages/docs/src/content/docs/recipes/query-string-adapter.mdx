@@ -1,0 +1,112 @@
+---
+title: Query String Adapter
+description: URL query string adapter demonstrating adapter extensibility
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import { QueryStringAdapterDemo } from "../../../components/QueryStringAdapterDemo";
+
+A query string adapter stores data in the URL's search parameters. This demonstrates how nanostores-storage's adapter pattern can be extended to any synchronous storage backend.
+
+<Aside type="tip" title="For Production Use">
+This recipe demonstrates adapter extensibility. For production applications with query string state, consider using [@vp-tw/nanostores-qs](https://github.com/vp-tw/nanostores-qs) which provides:
+- Typed schemas with Zod validation
+- Automatic serialization/deserialization
+- Type-safe query parameter access
+- Better handling of complex data types
+
+</Aside>
+
+## Live Demo
+
+Try changing values and watch the URL update in real-time. Use the mode toggle to see the difference between `pushState` and `replaceState`.
+
+<QueryStringAdapterDemo client:only="react" />
+
+## Implementation
+
+Query string adapters are **not included** in the library — you need to implement your own. This demo uses `URLSearchParams` for parsing and the History API for URL updates.
+
+See the demo source code above for a complete implementation example.
+
+## History Mode Options
+
+### pushState (creates history entries)
+
+```typescript
+const adapter = createQueryStringAdapter({ mode: "push" });
+
+// Each change adds to browser history
+// User can use back/forward buttons to navigate
+```
+
+Best for:
+
+- Multi-step wizards or forms
+- When users expect back button to undo changes
+- Navigation-like state changes
+
+### replaceState (no history entries)
+
+```typescript
+const adapter = createQueryStringAdapter({ mode: "replace" });
+
+// Updates URL without adding history entries
+// Cleaner for frequent updates
+```
+
+Best for:
+
+- Filter/sort state that changes frequently
+- Search inputs with debounced updates
+- Transient UI state
+
+## Usage
+
+```typescript
+import { createStorageStore } from "@vp-tw/nanostores-storage";
+
+const qsAdapter = createQueryStringAdapter({ mode: "replace" });
+
+// Single value store
+const filterStore = createStorageStore(qsAdapter, "filter", {
+  defaultValue: "all",
+  listen: true, // Sync on popstate
+});
+
+// Use in your app
+filterStore.set("active"); // URL: ?filter=active
+```
+
+## Limitations
+
+<Aside type="caution">
+The query string adapter has several limitations:
+
+1. **URL length** — Most browsers support ~2000 characters. Keep data small.
+2. **String only** — All values must be strings. Complex data needs serialization.
+3. **No duplicate keys** — `URLSearchParams.get()` returns only the first value for duplicate keys.
+4. **Visibility** — URL state is visible to users and in server logs.
+5. **popstate only** — `subscribe` only catches back/forward navigation, not programmatic `pushState`/`replaceState` from other code.
+   </Aside>
+
+## Combining with Other Adapters
+
+Use as a fallback to persist important state in the URL:
+
+```typescript
+import { createStorageStore, sessionStorageAdapter } from "@vp-tw/nanostores-storage";
+
+const qsAdapter = createQueryStringAdapter({ mode: "replace" });
+
+// URL is checked first, sessionStorage as fallback
+const tabStore = createStorageStore([qsAdapter, sessionStorageAdapter], "tab", {
+  defaultValue: "overview",
+});
+```
+
+## See Also
+
+- [Custom Adapters](/nanostores-storage/recipes/custom-adapters) — How to build adapters
+- [Cookie Adapter](/nanostores-storage/recipes/cookie-adapter) — Cookie storage example
+- [Fallback Chains](/nanostores-storage/concepts/fallback-chains) — Combine adapters
