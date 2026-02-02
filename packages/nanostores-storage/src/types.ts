@@ -72,12 +72,12 @@ export interface StorageAdapter {
  * createStorageStore([sessionStorageAdapter, localStorageAdapter], "key")
  * ```
  */
-export type AdapterConfig = StorageAdapter | [StorageAdapter, ...Array<StorageAdapter>];
-
 /**
  * Non-empty array of adapters (at least one element guaranteed).
  */
 export type NonEmptyAdapterArray = [StorageAdapter, ...Array<StorageAdapter>];
+
+export type AdapterConfig = StorageAdapter | NonEmptyAdapterArray;
 
 /**
  * Listener controller for storage event subscriptions.
