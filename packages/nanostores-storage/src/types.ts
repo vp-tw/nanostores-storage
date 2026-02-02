@@ -171,7 +171,7 @@ export interface StorageValuesStore {
   /** Get all values, or a single value by key */
   get: {
     (): Record<string, string>;
-    (key: string): string | undefined;
+    (key: string): string | null;
   };
 
   /** Set a single value */
