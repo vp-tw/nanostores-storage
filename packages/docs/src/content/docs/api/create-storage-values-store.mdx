@@ -83,9 +83,9 @@ store.$value.subscribe((values) => {
 Returns all values or a single value by key.
 
 <Aside type="tip" title="Why null instead of undefined?">
-  When a key doesn't exist, `get(key)` returns `null` (not `undefined`) to match the Web Storage API
-  behavior (`localStorage.getItem()` returns `null`). This allows consistent null-checking: `value
-  !== null`.
+  When a key doesn't exist, `get(key)` returns `null` (not `undefined`). This aligns with the Web
+  Storage API (`localStorage.getItem()`) and `createStorageStore`, allowing for consistent
+  null-checking: `value !== null`.
 </Aside>
 
 ```typescript
