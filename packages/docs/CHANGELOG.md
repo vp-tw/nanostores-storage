@@ -1,5 +1,13 @@
 # @repo/docs
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [6503aba]
+- Updated dependencies [cf39ff4]
+  - @vp-tw/nanostores-storage@0.0.3
+
 ## 0.0.2
 
 ### Patch Changes

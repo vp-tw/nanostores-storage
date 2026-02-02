@@ -1,6 +1,6 @@
 {
   "name": "@vp-tw/nanostores-storage",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A powerful integration tool for nanostores with Web Storage APIs (localStorage, sessionStorage, cookies, and memory)",
   "keywords": [
     "cookie",
