@@ -113,9 +113,9 @@ describe("createStorageValuesStore", () => {
       expect(store.get("key")).toBe("value");
     });
 
-    it("get(key) returns undefined for non-existent key", () => {
+    it("get(key) returns null for non-existent key", () => {
       const store = createStorageValuesStore(localStorageAdapter);
-      expect(store.get("nonexistent")).toBeUndefined();
+      expect(store.get("nonexistent")).toBeNull();
     });
   });
 

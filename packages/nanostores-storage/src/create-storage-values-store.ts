@@ -105,12 +105,12 @@ export function createStorageValuesStore(
    * Gets all values or a single value by key.
    */
   function get(): Record<string, string>;
-  function get(key: string): string | undefined;
-  function get(key?: string): Record<string, string> | string | undefined {
+  function get(key: string): string | null;
+  function get(key?: string): Record<string, string> | string | null {
     if (key === undefined) {
       return $internalStore.get();
     }
-    return $internalStore.get()[key];
+    return $internalStore.get()[key] ?? null;
   }
 
   /**

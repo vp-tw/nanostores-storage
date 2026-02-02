@@ -54,7 +54,7 @@ interface StorageValuesStore {
   readonly $value: ReadableAtom<Record<string, string>>;
   get: {
     (): Record<string, string>;
-    (key: string): string | undefined;
+    (key: string): string | null;
   };
   set: (key: string, value: string) => void;
   update: (values: Record<string, string>) => void;
@@ -82,13 +82,19 @@ store.$value.subscribe((values) => {
 
 Returns all values or a single value by key.
 
+<Aside type="tip" title="Why null instead of undefined?">
+  When a key doesn't exist, `get(key)` returns `null` (not `undefined`) to match the Web Storage API
+  behavior (`localStorage.getItem()` returns `null`). This allows consistent null-checking: `value
+  !== null`.
+</Aside>
+
 ```typescript
 // Get all values
 const values = store.get();
 // { "key1": "value1", "key2": "value2" }
 
 // Get single value
-const value = store.get("key1"); // "value1" or undefined
+const value = store.get("key1"); // "value1" or null
 ```
 
 ### set(key, value)
@@ -191,7 +197,7 @@ const storage = createStorageValuesStore(localStorageAdapter);
 console.log(storage.get()); // { ... }
 
 // Read single value
-console.log(storage.get("theme")); // "dark" or undefined
+console.log(storage.get("theme")); // "dark" or null
 
 // Set single value
 storage.set("theme", "dark");
