@@ -5,6 +5,7 @@
 import type { ReadableAtom } from "nanostores";
 import type {
   AdapterConfig,
+  NonEmptyAdapterArray,
   StorageAdapter,
   StorageListener,
   StorageStore,
@@ -14,9 +15,9 @@ import type {
 import { atom, computed } from "nanostores";
 
 /**
- * Normalizes adapter config to array.
+ * Normalizes adapter config to non-empty array.
  */
-function normalizeAdapters(config: AdapterConfig): Array<StorageAdapter> {
+function normalizeAdapters(config: AdapterConfig): NonEmptyAdapterArray {
   return Array.isArray(config) ? config : [config];
 }
 
@@ -65,7 +66,7 @@ function removeFromAdapters(adapters: Array<StorageAdapter>, key: string): void 
  * When using an array of adapters:
  * - **Read**: Returns the first non-null value found (in order)
  * - **Write**: Writes to ALL adapters
- * - **Listen**: Listens to ALL adapters
+ * - **Listen**: Listens to the FIRST adapter only
  *
  * @param adapter - Storage adapter or array of adapters for fallback chain
  * @param key - The storage key to bind to
@@ -197,20 +198,19 @@ export function createStorageStore(
   });
 
   /**
-   * Starts listening to storage changes from all adapters.
+   * Starts listening to storage changes from the first adapter only.
+   * In fallback chains, only the primary adapter triggers updates.
    */
   const on = (): void => {
     if ($on.get()) return; // Already started
 
-    for (const adapterItem of adapters) {
-      const unsubscribe = adapterItem.subscribe((changedKey) => {
-        // Only react to changes for our key (or bulk changes)
-        if (changedKey === null || changedKey === key) {
-          sync();
-        }
-      });
-      unsubscribeFns.push(unsubscribe);
-    }
+    const unsubscribe = adapters[0].subscribe((changedKey) => {
+      // Only react to changes for our key (or bulk changes)
+      if (changedKey === null || changedKey === key) {
+        sync();
+      }
+    });
+    unsubscribeFns.push(unsubscribe);
 
     $on.set(true);
   };

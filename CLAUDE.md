@@ -48,7 +48,7 @@ interface StorageStoreOptions {
 
 - **Read**: Returns the first non-null value found (in order)
 - **Write**: Writes to ALL adapters in the array
-- **Listen**: Listens to changes from ALL adapters
+- **Listen**: Listens to the FIRST adapter only
 
 **defaultValue Behavior:**
 

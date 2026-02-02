@@ -23,6 +23,7 @@ export { createStorageValuesStore } from "./create-storage-values-store";
 // Types
 export type {
   AdapterConfig,
+  NonEmptyAdapterArray,
   StorageAdapter,
   StorageListener,
   StorageStore,

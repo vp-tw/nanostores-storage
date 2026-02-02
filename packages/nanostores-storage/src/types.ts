@@ -61,7 +61,7 @@ export interface StorageAdapter {
  * When an array is provided:
  * - **Read**: Returns the first non-null value found (in order)
  * - **Write**: Writes to ALL adapters
- * - **Listen**: Listens to ALL adapters
+ * - **Listen**: Listens to the FIRST adapter only
  *
  * @example
  * ```typescript
@@ -72,7 +72,12 @@ export interface StorageAdapter {
  * createStorageStore([sessionStorageAdapter, localStorageAdapter], "key")
  * ```
  */
-export type AdapterConfig = StorageAdapter | Array<StorageAdapter>;
+export type AdapterConfig = StorageAdapter | [StorageAdapter, ...Array<StorageAdapter>];
+
+/**
+ * Non-empty array of adapters (at least one element guaranteed).
+ */
+export type NonEmptyAdapterArray = [StorageAdapter, ...Array<StorageAdapter>];
 
 /**
  * Listener controller for storage event subscriptions.
