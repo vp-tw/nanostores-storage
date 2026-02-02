@@ -11,7 +11,7 @@ When you pass an array of adapters to `createStorageStore`:
 
 - **Read**: Returns the first non-null value found (in order)
 - **Write**: Writes to ALL adapters
-- **Listen**: Listens to ALL adapters
+- **Listen**: Listens to the FIRST adapter only
 - **Remove**: Removes from ALL adapters
 
 ```typescript
@@ -86,17 +86,26 @@ localStorage.getItem("my-key"); // "new-value"
 
 ## Listening Behavior
 
-With `listen: true`, the store reacts to changes from ANY adapter in the chain:
+With `listen: true`, the store only reacts to changes from the **first adapter** in the chain:
 
 ```typescript
 const store = createStorageStore([sessionStorageAdapter, localStorageAdapter], "my-key", {
   listen: true,
 });
 
-// Changes in localStorage trigger store update
-// Changes in sessionStorage also trigger store update
-// Store always re-reads from the chain (respecting priority order)
+// Only sessionStorage changes trigger store updates
+// localStorage changes do NOT trigger updates
 ```
+
+This design is intentional for the primary use case: maintaining tab-isolated state with a persistent fallback.
+
+**Example: `[sessionStorage, localStorage]`**
+
+- Same tab: Only listens to sessionStorage (per-tab isolation)
+- New tab: sessionStorage is empty → reads from localStorage
+- Write: Saves to both adapters
+
+This ensures each tab maintains its own state while new tabs start with the last persisted value.
 
 ## Important Notes
 

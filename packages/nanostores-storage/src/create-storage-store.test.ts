@@ -326,24 +326,36 @@ describe("createStorageStore", () => {
       expect(store.listener.$on.get()).toBe(false);
     });
 
-    it("listens to all adapters in array config", () => {
+    it("listens to first adapter only in array config", () => {
       const store = createStorageStore([sessionStorageAdapter, localStorageAdapter], "test-key", {
         listen: true,
       });
 
       expect(store.listener.$on.get()).toBe(true);
 
-      // Simulate localStorage event (should update even though sessionStorage is first)
+      // Simulate localStorage event (second adapter - should NOT trigger update)
       localStorage.setItem("test-key", "from-local");
-      const event = new StorageEvent("storage", {
+      const localEvent = new StorageEvent("storage", {
         key: "test-key",
         newValue: "from-local",
         storageArea: localStorage,
       });
-      window.dispatchEvent(event);
+      window.dispatchEvent(localEvent);
 
-      // Value should be read from localStorage since sessionStorage is empty
-      expect(store.$value.get()).toBe("from-local");
+      // Value should NOT update since we only listen to first adapter
+      expect(store.$value.get()).toBe(null);
+
+      // Simulate sessionStorage event (first adapter - should trigger update)
+      sessionStorage.setItem("test-key", "from-session");
+      const sessionEvent = new StorageEvent("storage", {
+        key: "test-key",
+        newValue: "from-session",
+        storageArea: sessionStorage,
+      });
+      window.dispatchEvent(sessionEvent);
+
+      // Value should update since sessionStorage is the first adapter
+      expect(store.$value.get()).toBe("from-session");
     });
 
     it("can restart listener after stopping", () => {
