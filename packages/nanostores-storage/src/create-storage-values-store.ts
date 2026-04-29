@@ -102,6 +102,13 @@ export function createStorageValuesStore(
   };
 
   /**
+   * Force sync from storage to store.
+   */
+  const sync = (): void => {
+    updateValue(adapter.getAll());
+  };
+
+  /**
    * Gets all values or a single value by key.
    */
   function get(): Record<string, string>;
@@ -117,7 +124,7 @@ export function createStorageValuesStore(
    * Sets a single value in storage.
    */
   const set = (key: string, value: string): void => {
-    const current = $internalStore.get();
+    const current = adapter.getAll();
     updateValue({ ...current, [key]: value });
   };
 
@@ -127,7 +134,7 @@ export function createStorageValuesStore(
   function update(values: Record<string, string>): void;
   function update(fn: StorageValuesUpdateFn): void;
   function update(valuesOrFn: Record<string, string> | StorageValuesUpdateFn): void {
-    const current = $internalStore.get();
+    const current = adapter.getAll();
     const newValue =
       typeof valuesOrFn === "function" ? valuesOrFn(current) : { ...current, ...valuesOrFn };
     updateValue(newValue);
@@ -137,7 +144,7 @@ export function createStorageValuesStore(
    * Removes one or more values from storage.
    */
   const remove = (keyOrKeys: string | Array<string>): void => {
-    const current = $internalStore.get();
+    const current = adapter.getAll();
     const keysToDelete = Array.isArray(keyOrKeys) ? keyOrKeys : [keyOrKeys];
     const updated = { ...current };
     for (const k of keysToDelete) {
@@ -151,13 +158,6 @@ export function createStorageValuesStore(
    */
   const clear = (): void => {
     updateValue({});
-  };
-
-  /**
-   * Force sync from storage to store.
-   */
-  const sync = (): void => {
-    updateValue(adapter.getAll());
   };
 
   /**

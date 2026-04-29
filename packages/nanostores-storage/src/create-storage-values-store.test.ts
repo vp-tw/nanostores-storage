@@ -157,6 +157,104 @@ describe("createStorageValuesStore", () => {
     });
   });
 
+  describe("mutations preserve external storage changes", () => {
+    it("set() does not overwrite externally added keys", () => {
+      const store = createStorageValuesStore(localStorageAdapter);
+      store.set("a", "1");
+
+      // External code writes directly to storage
+      localStorage.setItem("b", "2");
+
+      // Store mutation should not overwrite "b"
+      store.set("c", "3");
+
+      expect(localStorage.getItem("a")).toBe("1");
+      expect(localStorage.getItem("b")).toBe("2");
+      expect(localStorage.getItem("c")).toBe("3");
+      expect(store.get()).toEqual({ a: "1", b: "2", c: "3" });
+    });
+
+    it("update() does not overwrite externally added keys", () => {
+      const store = createStorageValuesStore(localStorageAdapter);
+      store.set("a", "1");
+
+      localStorage.setItem("b", "2");
+
+      store.update({ c: "3" });
+
+      expect(localStorage.getItem("b")).toBe("2");
+      expect(store.get()).toEqual({ a: "1", b: "2", c: "3" });
+    });
+
+    it("remove() does not overwrite externally added keys", () => {
+      const store = createStorageValuesStore(localStorageAdapter);
+      store.set("a", "1");
+
+      localStorage.setItem("b", "2");
+
+      store.remove("a");
+
+      expect(localStorage.getItem("b")).toBe("2");
+      expect(store.get()).toEqual({ b: "2" });
+    });
+
+    it("set() picks up externally modified values for existing keys", () => {
+      const store = createStorageValuesStore(localStorageAdapter);
+      store.set("a", "1");
+
+      localStorage.setItem("a", "changed");
+
+      store.set("b", "2");
+
+      expect(store.get("a")).toBe("changed");
+      expect(localStorage.getItem("a")).toBe("changed");
+      expect(store.get()).toEqual({ a: "changed", b: "2" });
+    });
+
+    it("update(fn) receives fresh snapshot including external changes", () => {
+      const store = createStorageValuesStore(localStorageAdapter);
+      store.set("a", "1");
+
+      localStorage.setItem("b", "2");
+
+      store.update((current) => ({
+        ...current,
+        c: String(Object.keys(current).length),
+      }));
+
+      expect(store.get()).toEqual({ a: "1", b: "2", c: "2" });
+    });
+
+    it("preserves multiple external writes between mutations", () => {
+      const store = createStorageValuesStore(localStorageAdapter);
+      store.set("a", "1");
+
+      localStorage.setItem("b", "2");
+      localStorage.setItem("c", "3");
+      localStorage.setItem("d", "4");
+
+      store.set("e", "5");
+
+      expect(store.get()).toEqual({ a: "1", b: "2", c: "3", d: "4", e: "5" });
+      expect(localStorage.getItem("b")).toBe("2");
+      expect(localStorage.getItem("c")).toBe("3");
+      expect(localStorage.getItem("d")).toBe("4");
+    });
+
+    it("clear() does not leave stale data after external additions", () => {
+      const store = createStorageValuesStore(localStorageAdapter);
+      store.set("a", "1");
+
+      localStorage.setItem("b", "2");
+
+      store.clear();
+
+      expect(localStorage.getItem("a")).toBeNull();
+      expect(localStorage.getItem("b")).toBeNull();
+      expect(store.get()).toEqual({});
+    });
+  });
+
   describe("sync method", () => {
     it("syncs from storage to store", () => {
       const store = createStorageValuesStore(localStorageAdapter);
