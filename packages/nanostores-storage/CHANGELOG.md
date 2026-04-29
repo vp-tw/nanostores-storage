@@ -1,5 +1,11 @@
 # @vdustr/template-aio-ts-lib
 
+## 0.0.4
+
+### Patch Changes
+
+- ae75ade: fix: sync store before mutations to prevent overwriting external storage changes
+
 ## 0.0.3
 
 ### Patch Changes
